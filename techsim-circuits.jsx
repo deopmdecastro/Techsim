@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useReducer } from "react";
+import { useState, useRef, useEffect, useCallback, useReducer, useMemo } from "react";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & CONFIG
@@ -9,6 +9,31 @@ const MAX_H = 60;
 let _uid = 1;
 const uid = () => `e${_uid++}`;
 const WIRE_COLORS = ["#38bdf8","#22c55e","#f59e0b","#f43f5e","#a78bfa","#fb923c","#ffffff","#fbbf24","#4ade80","#c084fc"];
+const MODULE_GLYPHS = { dc:"⎓", ac:"∿", pneum:"⬡", hidro:"◉", logic:"⊞", cmd:"⌬", install:"⟂", ladder:"⇄" };
+const TOOL_GLYPHS = { select:"◎", wire:"∿", delete:"⨯" };
+const clamp = (v,min,max) => Math.min(max, Math.max(min, v));
+const hexToRgba = (hex, alpha=1) => {
+  if (!hex || typeof hex !== "string" || !hex.startsWith("#")) return `rgba(148,163,184,${alpha})`;
+  let h = hex.slice(1);
+  if (h.length === 3) h = h.split("").map(ch => ch + ch).join("");
+  const n = parseInt(h.slice(0, 6), 16);
+  if (Number.isNaN(n)) return `rgba(148,163,184,${alpha})`;
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+};
+const shiftHex = (hex, amt=0) => {
+  if (!hex || typeof hex !== "string" || !hex.startsWith("#")) return hex || "#94a3b8";
+  let h = hex.slice(1);
+  if (h.length === 3) h = h.split("").map(ch => ch + ch).join("");
+  const n = parseInt(h.slice(0, 6), 16);
+  if (Number.isNaN(n)) return hex;
+  const f = amt >= 0 ? 255 * amt : 0;
+  const m = Math.abs(amt);
+  const mix = (c) => Math.round(c + (f - c) * m);
+  const r = clamp(mix((n >> 16) & 255), 0, 255).toString(16).padStart(2, "0");
+  const g = clamp(mix((n >> 8) & 255), 0, 255).toString(16).padStart(2, "0");
+  const b = clamp(mix(n & 255), 0, 255).toString(16).padStart(2, "0");
+  return `#${r}${g}${b}`;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LANDING PAGE
@@ -31,25 +56,25 @@ function LandingPage({ onLogin, onRegister }) {
   const animWire = (i) => (tick % nodeWires.length) === i;
 
   const mods = [
-    {icon:"🔌",label:"Corrente Contínua", col:"#22d3ee",desc:"DC · Ohm · KVL · Thévenin"},
-    {icon:"⚡",label:"Corrente Alternada", col:"#f59e0b",desc:"AC · RLC · Fasores · FP"},
-    {icon:"💨",label:"Pneumática",         col:"#a78bfa",desc:"Válvulas · Cilindros · Força"},
-    {icon:"💧",label:"Hidráulica",         col:"#38bdf8",desc:"Bombas · Pascal · Potência"},
-    {icon:"🔲",label:"Lógica Digital",     col:"#4ade80",desc:"AND/OR/NOT/XOR · FF-SR"},
-    {icon:"🏭",label:"Comandos Elétricos", col:"#fb923c",desc:"Motores 3φ · Contatores"},
-    {icon:"🏗", label:"Instalações",        col:"#f43f5e",desc:"NBR 5410 · Dimensionamento"},
-    {icon:"🖥", label:"Ladder / CLP",       col:"#c084fc",desc:"Contatos · Bobinas · Timers"},
+    {icon:MODULE_GLYPHS.dc,label:"Corrente Contínua", col:"#22d3ee",desc:"DC · Ohm · KVL · Thévenin"},
+    {icon:MODULE_GLYPHS.ac,label:"Corrente Alternada", col:"#f59e0b",desc:"AC · RLC · Fasores · FP"},
+    {icon:MODULE_GLYPHS.pneum,label:"Pneumática",         col:"#a78bfa",desc:"Válvulas · Cilindros · Força"},
+    {icon:MODULE_GLYPHS.hidro,label:"Hidráulica",         col:"#38bdf8",desc:"Bombas · Pascal · Potência"},
+    {icon:MODULE_GLYPHS.logic,label:"Lógica Digital",     col:"#4ade80",desc:"AND/OR/NOT/XOR · FF-SR"},
+    {icon:MODULE_GLYPHS.cmd,label:"Comandos Elétricos", col:"#fb923c",desc:"Motores 3φ · Contatores"},
+    {icon:MODULE_GLYPHS.install, label:"Instalações",        col:"#f43f5e",desc:"NBR 5410 · Dimensionamento"},
+    {icon:MODULE_GLYPHS.ladder, label:"Ladder / CLP",       col:"#c084fc",desc:"Contatos · Bobinas · Timers"},
   ];
 
   const features = [
-    {icon:"🔄",title:"Girar Componentes",    desc:"Ctrl+← → ou painel lateral · 4 orientações"},
-    {icon:"🎨",title:"Cor dos Fios",          desc:"10 cores para organizar circuitos complexos"},
-    {icon:"✏️",title:"Editar Nome & Valor",   desc:"Duplo clique ou painel de propriedades"},
-    {icon:"📍",title:"Endereçamento CLP",     desc:"Defina I0.0, Q0.1, M0.0 em cada componente"},
-    {icon:"🔢",title:"N.º de Entradas",       desc:"Portas lógicas com 2 a 8 entradas"},
-    {icon:"💾",title:"Salvar / Abrir JSON",   desc:"Projetos portáveis · Ctrl+S · Ctrl+O"},
-    {icon:"↩️",title:"Undo/Redo 60 níveis",   desc:"Nunca perca trabalho · Ctrl+Z/Y"},
-    {icon:"⚡",title:"Simulação ao Vivo",     desc:"F5 — animação de corrente em tempo real"},
+    {icon:"⟳",title:"Girar Componentes",    desc:"Ctrl+← → ou painel lateral · 4 orientações"},
+    {icon:"◌",title:"Cor dos Fios",          desc:"10 cores para organizar circuitos complexos"},
+    {icon:"⌁",title:"Buscar & Duplicar",     desc:"Busca rápida na paleta + Ctrl+D para replicar componentes"},
+    {icon:"▣",title:"Modo 2D / 3D",          desc:"Visual técnico plano ou com profundidade para inspeção"},
+    {icon:"⌗",title:"Endereçamento CLP",     desc:"Defina I0.0, Q0.1, M0.0 em cada componente"},
+    {icon:"⬒",title:"Salvar / PNG / JSON",   desc:"Exportação rápida para projetos portáveis e documentação"},
+    {icon:"↩",title:"Undo/Redo 60 níveis",   desc:"Nunca perca trabalho · Ctrl+Z/Y"},
+    {icon:"◎",title:"Ajuste Automático",     desc:"Fit View, auto layout e simulação ao vivo no mesmo canvas"},
   ];
 
   const grd = `repeating-linear-gradient(#22d3ee08 0,#22d3ee08 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,#22d3ee08 0,#22d3ee08 1px,transparent 1px,transparent 48px)`;
@@ -119,7 +144,7 @@ function LandingPage({ onLogin, onRegister }) {
             </button>
           </div>
           <div style={{display:"flex",gap:28,marginTop:40}}>
-            {[["8","Módulos"],["60+","Componentes"],["∞","Projetos"]].map(([v,l])=>(
+            {[["8","Módulos"],["2","Views 2D/3D"],["PNG","Exportação"]].map(([v,l])=>(
               <div key={l}>
                 <div style={{fontSize:24,fontWeight:700,color:"#22d3ee",textShadow:"0 0 16px #22d3ee44"}}>{v}</div>
                 <div style={{fontSize:9,color:"#334155",letterSpacing:2,marginTop:2}}>{l}</div>
@@ -314,14 +339,14 @@ function Dashboard({ user, onLogout, onOpenModule, onAdmin }) {
   const [activeTab, setActiveTab] = useState("modules");
 
   const mods = [
-    { id:"dc",      icon:"🔌", label:"Corrente Contínua",   color:"#22d3ee", desc:"DC · Ohm · KVL · Thévenin",      docs:"Lei de Ohm, KVL, KCL, Thévenin/Norton" },
-    { id:"ac",      icon:"⚡", label:"Corrente Alternada",  color:"#f59e0b", desc:"AC · RLC · Fasores · FP",         docs:"Impedância, Reatância XL/XC, Potência" },
-    { id:"pneum",   icon:"💨", label:"Pneumática",          color:"#a78bfa", desc:"Válvulas · Cilindros · Força",    docs:"Pressão, Força, Consumo, Válvulas" },
-    { id:"hidro",   icon:"💧", label:"Hidráulica",          color:"#38bdf8", desc:"Bombas · Cilindros · Pascal",     docs:"Potência Hid., Força, Velocidade" },
-    { id:"logic",   icon:"🔲", label:"Lógica Digital",      color:"#4ade80", desc:"AND·OR·NOT·XOR · FF",            docs:"Propagação de sinais, Tabela Verdade" },
-    { id:"cmd",     icon:"🏭", label:"Comandos Elétricos",  color:"#fb923c", desc:"Contatores · Motores · Relés",    docs:"Motor 3φ, Cabo, Disjuntor, Relé Térm." },
-    { id:"install", icon:"🏗",  label:"Instalações",         color:"#f43f5e", desc:"NBR 5410 · Dimensionamento",     docs:"Carga, Id, Queda de tensão, DPS" },
-    { id:"ladder",  icon:"🖥",  label:"Ladder / CLP",        color:"#c084fc", desc:"Contatos · Bobinas · Timers",    docs:"Contatos NA/NF, Bobinas, TON/TOF" },
+    { id:"dc",      icon:MODULE_GLYPHS.dc, label:"Corrente Contínua",   color:"#22d3ee", desc:"DC · Ohm · KVL · Thévenin",      docs:"Lei de Ohm, KVL, KCL, Thévenin/Norton" },
+    { id:"ac",      icon:MODULE_GLYPHS.ac, label:"Corrente Alternada",  color:"#f59e0b", desc:"AC · RLC · Fasores · FP",         docs:"Impedância, Reatância XL/XC, Potência" },
+    { id:"pneum",   icon:MODULE_GLYPHS.pneum, label:"Pneumática",          color:"#a78bfa", desc:"Válvulas · Cilindros · Força",    docs:"Pressão, Força, Consumo, Válvulas" },
+    { id:"hidro",   icon:MODULE_GLYPHS.hidro, label:"Hidráulica",          color:"#38bdf8", desc:"Bombas · Cilindros · Pascal",     docs:"Potência Hid., Força, Velocidade" },
+    { id:"logic",   icon:MODULE_GLYPHS.logic, label:"Lógica Digital",      color:"#4ade80", desc:"AND·OR·NOT·XOR · FF",            docs:"Propagação de sinais, Tabela Verdade" },
+    { id:"cmd",     icon:MODULE_GLYPHS.cmd, label:"Comandos Elétricos",  color:"#fb923c", desc:"Contatores · Motores · Relés",    docs:"Motor 3φ, Cabo, Disjuntor, Relé Térm." },
+    { id:"install", icon:MODULE_GLYPHS.install,  label:"Instalações",         color:"#f43f5e", desc:"NBR 5410 · Dimensionamento",     docs:"Carga, Id, Queda de tensão, DPS" },
+    { id:"ladder",  icon:MODULE_GLYPHS.ladder,  label:"Ladder / CLP",        color:"#c084fc", desc:"Contatos · Bobinas · Timers",    docs:"Contatos NA/NF, Bobinas, TON/TOF" },
   ];
 
   const shortcuts = [
@@ -499,14 +524,14 @@ function hRed(st, a) {
 // MODULE DEFINITIONS (for Engine)
 // ═══════════════════════════════════════════════════════════════════════════════
 const MODS_ALL = [
-  { id:"dc",      icon:"🔌", label:"Corrente Contínua",   color:"#22d3ee", desc:"DC · Ohm · KVL · Thévenin" },
-  { id:"ac",      icon:"⚡", label:"Corrente Alternada",  color:"#f59e0b", desc:"AC · RLC · Fasores · FP" },
-  { id:"pneum",   icon:"💨", label:"Pneumática",          color:"#a78bfa", desc:"Válvulas · Cilindros · Pressão" },
-  { id:"hidro",   icon:"💧", label:"Hidráulica",          color:"#38bdf8", desc:"Bombas · Cilindros · Pascal" },
-  { id:"logic",   icon:"🔲", label:"Lógica Digital",      color:"#4ade80", desc:"AND·OR·NOT·XOR · FF" },
-  { id:"cmd",     icon:"🏭", label:"Comandos Elétricos",  color:"#fb923c", desc:"Contatores · Motores · Relés" },
-  { id:"install", icon:"🏗",  label:"Instalações",         color:"#f43f5e", desc:"NBR 5410 · Cargas · Proteção" },
-  { id:"ladder",  icon:"🖥",  label:"Ladder / CLP",        color:"#c084fc", desc:"Contatos · Bobinas · Timers" },
+  { id:"dc",      icon:MODULE_GLYPHS.dc, label:"Corrente Contínua",   color:"#22d3ee", desc:"DC · Ohm · KVL · Thévenin" },
+  { id:"ac",      icon:MODULE_GLYPHS.ac, label:"Corrente Alternada",  color:"#f59e0b", desc:"AC · RLC · Fasores · FP" },
+  { id:"pneum",   icon:MODULE_GLYPHS.pneum, label:"Pneumática",          color:"#a78bfa", desc:"Válvulas · Cilindros · Pressão" },
+  { id:"hidro",   icon:MODULE_GLYPHS.hidro, label:"Hidráulica",          color:"#38bdf8", desc:"Bombas · Cilindros · Pascal" },
+  { id:"logic",   icon:MODULE_GLYPHS.logic, label:"Lógica Digital",      color:"#4ade80", desc:"AND·OR·NOT·XOR · FF" },
+  { id:"cmd",     icon:MODULE_GLYPHS.cmd, label:"Comandos Elétricos",  color:"#fb923c", desc:"Contatores · Motores · Relés" },
+  { id:"install", icon:MODULE_GLYPHS.install,  label:"Instalações",         color:"#f43f5e", desc:"NBR 5410 · Cargas · Proteção" },
+  { id:"ladder",  icon:MODULE_GLYPHS.ladder,  label:"Ladder / CLP",        color:"#c084fc", desc:"Contatos · Bobinas · Timers" },
 ];
 
 const LIBS = {
@@ -797,13 +822,43 @@ function drawGrid(ctx,W,H,pan,zoom){
   for(let x=ox;x<W;x+=s)for(let y=oy;y<H;y+=s){ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fill();}
 }
 
-function drawWire(ctx,w,sel,live,modColor,tick){
+function drawWire(ctx,w,sel,live,modColor,tick,viewMode="2d"){
   const wCol=w.color||(live?modColor:"#2a4a6a");
+  if(viewMode==="3d"){
+    ctx.save();
+    ctx.strokeStyle=hexToRgba(sel?"#fbbf24":wCol,0.24);
+    ctx.lineWidth=sel?9:live?8:7;
+    ctx.lineCap="round";
+    ctx.beginPath();ctx.moveTo(w.x1+1.5,w.y1+2.5);ctx.lineTo(w.x2+1.5,w.y2+2.5);ctx.stroke();
+    ctx.restore();
+  }
+  ctx.save();
   ctx.strokeStyle=sel?"#fbbf24":wCol;
-  ctx.lineWidth=sel?3:live?2.5:2;ctx.setLineDash([]);
+  ctx.lineWidth=sel?3.4:live?2.8:2.2;
+  ctx.lineCap="round";
+  ctx.setLineDash([]);
   if(live){ctx.setLineDash([9,5]);ctx.lineDashOffset=-(tick%14);}
-  ctx.beginPath();ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);ctx.stroke();ctx.setLineDash([]);
-  [[w.x1,w.y1],[w.x2,w.y2]].forEach(([x,y])=>{ctx.fillStyle=sel?"#fbbf24":wCol;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();});
+  ctx.beginPath();ctx.moveTo(w.x1,w.y1);ctx.lineTo(w.x2,w.y2);ctx.stroke();
+  if(viewMode==="3d"){
+    ctx.strokeStyle=hexToRgba("#ffffff",0.18);
+    ctx.lineWidth=1;
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(w.x1,w.y1-0.8);ctx.lineTo(w.x2,w.y2-0.8);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+  [[w.x1,w.y1],[w.x2,w.y2]].forEach(([x,y])=>{
+    if(viewMode==="3d"){
+      ctx.fillStyle=hexToRgba(wCol,0.22);
+      ctx.beginPath();ctx.arc(x+1.5,y+2,6,0,Math.PI*2);ctx.fill();
+    }
+    ctx.fillStyle=sel?"#fbbf24":wCol;
+    ctx.beginPath();ctx.arc(x,y,4.2,0,Math.PI*2);ctx.fill();
+    if(viewMode==="3d"){
+      ctx.fillStyle=hexToRgba("#ffffff",0.28);
+      ctx.beginPath();ctx.arc(x-1.2,y-1.2,1.6,0,Math.PI*2);ctx.fill();
+    }
+  });
 }
 
 function shBox(ctx,col,sel,sym,sub=""){const c=sel?"#fbbf24":col;ctx.fillStyle="#050d18";ctx.strokeStyle=c;ctx.lineWidth=2;const w=sub?28:20;ctx.beginPath();ctx.roundRect(-w,-13,w*2,26,4);ctx.fill();ctx.stroke();ctx.fillStyle=col;ctx.font="bold 9px monospace";ctx.textAlign="center";ctx.fillText(sym,0,sub?-1:4);if(sub){ctx.font="7px monospace";ctx.fillStyle=col+"88";ctx.fillText(sub,0,10);}ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-G,0);ctx.lineTo(-w,0);ctx.stroke();ctx.beginPath();ctx.moveTo(w,0);ctx.lineTo(G,0);ctx.stroke();}
@@ -1668,11 +1723,29 @@ function shTempGauge(ctx,col,sel,temp){
   ctx.beginPath();ctx.moveTo(0,26);ctx.lineTo(0,G);ctx.stroke();
 }
 
-function drawComp(ctx,comp,sel,live,modColor){
+function drawComp(ctx,comp,sel,live,modColor,viewMode="2d"){
   const{x,y,t,n,v,r=0}=comp;
   const lib=Object.values(LIBS).flat().find(l=>l.t===t);
   const col=comp.color||lib?.col||"#94a3b8";
+  const is3d=viewMode==="3d";
   ctx.save();ctx.translate(x,y);ctx.rotate(r*Math.PI/180);
+  if(is3d){
+    ctx.save();
+    ctx.shadowColor=hexToRgba(col, sel?0.40:0.24);
+    ctx.shadowBlur=sel?24:14;
+    ctx.shadowOffsetX=3;
+    ctx.shadowOffsetY=5;
+    ctx.fillStyle=hexToRgba(shiftHex(col,-0.1),0.09);
+    ctx.strokeStyle=hexToRgba(col,0.20);
+    ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.roundRect(-34,-26,68,52,10);ctx.fill();ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle=hexToRgba("#ffffff",0.10);
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(-26,-18);ctx.lineTo(24,-18);ctx.stroke();
+    ctx.restore();
+  }
   const hasLeads=!["gnd","gnde","bus","cyl","cylse","cylh","mtr","osc","pot","prs","manm","tc","enc","vfd","seg7","plc","watt","phasem","lubd","mux","dff","trns","zpv"].includes(t);
   const gateType=["and","or","not","nand","nor","xor","buf"].includes(t);
   const contactType=["cno","cnf","cpos","coil","set","rst"].includes(t);
@@ -1931,45 +2004,55 @@ function PropertiesPanel({comp,lib,modColor,comps,wires,push,setSel,sd,onCalc,on
 // ═══════════════════════════════════════════════════════════════════════════════
 // TOOLBAR COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
-function Toolbar({tool,setTool,sel,selComp,selWire,modColor,running,snap,ortho,zoom,hist,comps,wires,push,dispatch,setSel,setSnap,setOrtho,setZoom,setPan,doRot,calc,toggleSim,saveJSON,fileRef,clearAll,autoLayout,modId,wireColor,setWireColor}){
+function Toolbar({tool,setTool,sel,selComp,selWire,modColor,running,snap,ortho,zoom,hist,comps,wires,push,dispatch,setSel,setSnap,setOrtho,setZoom,setPan,doRot,calc,toggleSim,saveJSON,fileRef,clearAll,autoLayout,modId,wireColor,setWireColor,viewMode,setViewMode,exportPNG,duplicateSelected,fitView}){
   const [showWireColors, setShowWireColors] = useState(false);
-  const B=(col,bg="#071020",active=false)=>({background:active?`${col}22`:bg,border:`1px solid ${active?col:col+"33"}`,color:active?col:col,borderRadius:5,padding:"4px 9px",cursor:"pointer",fontSize:10,fontFamily:"'Courier New',monospace",transition:"all 0.15s",whiteSpace:"nowrap",letterSpacing:0.5});
-  const Sep=()=><div style={{width:1,height:20,background:"#1e293b",margin:"0 2px",flexShrink:0}}/>;
+  const B=(col,bg="#071020",active=false)=>({
+    background:active?`${col}20`:bg,
+    border:`1px solid ${active?col:col+"33"}`,
+    color:active?col:col,
+    borderRadius:6,
+    padding:"4px 10px",
+    cursor:"pointer",
+    fontSize:10,
+    fontFamily:"'Courier New',monospace",
+    transition:"all 0.15s",
+    whiteSpace:"nowrap",
+    letterSpacing:0.5,
+    boxShadow:active?`0 0 0 1px ${hexToRgba(col,0.15)} inset, 0 0 16px ${hexToRgba(col,0.16)}`:"inset 0 1px 0 #ffffff08"
+  });
+  const Sep=()=><div style={{width:1,height:22,background:"#1e293b",margin:"0 2px",flexShrink:0}}/>;
 
   return(
-    <div style={{position:"absolute",top:8,left:8,right:8,display:"flex",gap:4,alignItems:"center",background:"#040d18ee",borderRadius:7,padding:"5px 10px",border:`1px solid ${modColor}22`,flexWrap:"wrap",zIndex:100}}>
-      {/* Undo/Redo */}
+    <div style={{position:"absolute",top:8,left:8,right:8,display:"flex",gap:4,alignItems:"center",background:"#040d18ee",borderRadius:8,padding:"6px 10px",border:`1px solid ${modColor}22`,flexWrap:"wrap",zIndex:100,backdropFilter:"blur(8px)",boxShadow:"0 10px 34px #0008"}}>
       <button onClick={()=>dispatch({type:"UNDO"})} disabled={!hist.past.length} title="Desfazer Ctrl+Z" style={B(hist.past.length?"#94a3b8":"#1e293b")}>↩</button>
       <button onClick={()=>dispatch({type:"REDO"})} disabled={!hist.future.length} title="Refazer Ctrl+Y" style={B(hist.future.length?"#94a3b8":"#1e293b")}>↪</button>
       <Sep/>
 
-      {/* Component tools when selected */}
       {selComp&&<>
         <button onClick={()=>doRot(-90)} title="Girar -90° (Ctrl+←)" style={B("#94a3b8")}>↺ −90°</button>
         <button onClick={()=>doRot(90)}  title="Girar +90° (Ctrl+→)" style={B("#94a3b8")}>↻ +90°</button>
+        <button onClick={duplicateSelected} title="Duplicar selecionado (Ctrl+D)" style={B(modColor)}>
+          ⧉ Duplicar
+        </button>
         <Sep/>
       </>}
 
-      {/* Wire color picker */}
       {tool==="wire"&&(
         <div style={{position:"relative"}}>
-          <button onClick={()=>setShowWireColors(s=>!s)} title="Cor do fio"
-            style={{...B("#94a3b8"),display:"flex",alignItems:"center",gap:5}}>
+          <button onClick={()=>setShowWireColors(s=>!s)} title="Cor do fio" style={{...B("#94a3b8"),display:"flex",alignItems:"center",gap:5}}>
             <div style={{width:10,height:10,borderRadius:"50%",background:wireColor||"#38bdf8"}}/>
             Cor do Fio
           </button>
           {showWireColors&&(
-            <div style={{position:"absolute",top:30,left:0,background:"#071020",border:"1px solid #1e3a5f",borderRadius:6,padding:"8px",display:"flex",gap:5,flexWrap:"wrap",width:140,zIndex:200,boxShadow:"0 4px 20px #000c"}}>
+            <div style={{position:"absolute",top:32,left:0,background:"#071020",border:"1px solid #1e3a5f",borderRadius:6,padding:"8px",display:"flex",gap:5,flexWrap:"wrap",width:140,zIndex:200,boxShadow:"0 4px 20px #000c"}}>
               {WIRE_COLORS.map(wc=>(
-                <div key={wc} onClick={()=>{setWireColor(wc);setShowWireColors(false);}}
-                  style={{width:20,height:20,borderRadius:"50%",background:wc,border:`2px solid ${wireColor===wc?"#fff":"#1e3a5f"}`,cursor:"pointer"}}/>
+                <div key={wc} onClick={()=>{setWireColor(wc);setShowWireColors(false);}} style={{width:20,height:20,borderRadius:"50%",background:wc,border:`2px solid ${wireColor===wc?"#fff":"#1e3a5f"}`,cursor:"pointer"}}/>
               ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Wire selected tools */}
       {selWire&&<>
         <div style={{position:"relative"}}>
           <button onClick={()=>setShowWireColors(s=>!s)} style={B("#94a3b8")}>
@@ -1977,10 +2060,9 @@ function Toolbar({tool,setTool,sel,selComp,selWire,modColor,running,snap,ortho,z
             Cor do Fio
           </button>
           {showWireColors&&(
-            <div style={{position:"absolute",top:30,left:0,background:"#071020",border:"1px solid #1e3a5f",borderRadius:6,padding:"8px",display:"flex",gap:5,flexWrap:"wrap",width:140,zIndex:200,boxShadow:"0 4px 20px #000c"}}>
+            <div style={{position:"absolute",top:32,left:0,background:"#071020",border:"1px solid #1e3a5f",borderRadius:6,padding:"8px",display:"flex",gap:5,flexWrap:"wrap",width:140,zIndex:200,boxShadow:"0 4px 20px #000c"}}>
               {WIRE_COLORS.map(wc=>(
-                <div key={wc} onClick={()=>{push({comps,wires:wires.map(w=>w.id===selWire.id?{...w,color:wc}:w)});setShowWireColors(false);}}
-                  style={{width:20,height:20,borderRadius:"50%",background:wc,border:`2px solid ${(selWire.color||"#38bdf8")===wc?"#fff":"#1e3a5f"}`,cursor:"pointer"}}/>
+                <div key={wc} onClick={()=>{push({comps,wires:wires.map(w=>w.id===selWire.id?{...w,color:wc}:w)});setShowWireColors(false);}} style={{width:20,height:20,borderRadius:"50%",background:wc,border:`2px solid ${(selWire.color||"#38bdf8")===wc?"#fff":"#1e3a5f"}`,cursor:"pointer"}}/>
               ))}
             </div>
           )}
@@ -1989,26 +2071,25 @@ function Toolbar({tool,setTool,sel,selComp,selWire,modColor,running,snap,ortho,z
         <Sep/>
       </>}
 
-      {/* Simulation */}
-      <button onClick={toggleSim} title="F5" style={B(running?"#22c55e":"#64748b",running?"#052e16":"#071020",running)}>
-        {running?"⏸ Parar":"▶ Simular"}
-      </button>
+      <button onClick={toggleSim} title="F5" style={B(running?"#22c55e":"#64748b",running?"#052e16":"#071020",running)}>{running?"⏸ Parar":"▶ Simular"}</button>
       <button onClick={calc} title="F9" style={{...B(modColor,"#071020"),fontWeight:700}}>⚡ Calcular</button>
       <Sep/>
 
-      {/* File */}
-      <button onClick={saveJSON} title="Ctrl+S" style={B("#64748b")}>💾</button>
-      <button onClick={()=>fileRef.current?.click()} title="Ctrl+O" style={B("#64748b")}>📂</button>
-      <button onClick={autoLayout} title="Auto Layout" style={B("#64748b")}>✨</button>
-      <button onClick={clearAll} title="Limpar" style={B("#f87171")}>🗑</button>
+      <button onClick={saveJSON} title="Ctrl+S" style={B("#64748b")}>💾 JSON</button>
+      <button onClick={()=>fileRef.current?.click()} title="Ctrl+O" style={B("#64748b")}>📂 Abrir</button>
+      <button onClick={exportPNG} title="Exportar PNG" style={B("#64748b")}>🖼 PNG</button>
+      <button onClick={autoLayout} title="Auto Layout" style={B("#64748b")}>✨ Layout</button>
+      <button onClick={clearAll} title="Limpar" style={B("#f87171")}>🗑 Limpar</button>
       <Sep/>
 
-      {/* View */}
-      <button onClick={()=>setZoom(z=>Math.min(z*1.2,5))} title="+" style={B("#64748b")}>+</button>
-      <button onClick={()=>setZoom(z=>Math.max(z*0.8,0.15))} title="-" style={B("#64748b")}>−</button>
-      <button onClick={()=>{setZoom(1);setPan({x:0,y:0});}} style={{...B("#64748b"),minWidth:40,fontSize:9}}>{(zoom*100).toFixed(0)}%</button>
+      <button onClick={()=>setZoom(z=>Math.min(z*1.2,5))} title="Zoom +" style={B("#64748b")}>+</button>
+      <button onClick={()=>setZoom(z=>Math.max(z*0.8,0.15))} title="Zoom -" style={B("#64748b")}>−</button>
+      <button onClick={fitView} title="Ajustar à área útil" style={B("#64748b")}>◎ Fit</button>
+      <button onClick={()=>{setZoom(1);setPan({x:0,y:0});}} style={{...B("#64748b"),minWidth:48,fontSize:9}}>{(zoom*100).toFixed(0)}%</button>
       <button onClick={()=>setSnap(s=>!s)} style={B(snap?"#22c55e":"#475569",snap?"#052e16":"#071020",snap)}>{snap?"SNAP✓":"SNAP"}</button>
       <button onClick={()=>setOrtho(o=>!o)} style={B(ortho?"#22d3ee":"#475569",ortho?"#06303a":"#071020",ortho)}>{ortho?"ORTHO✓":"ORTHO"}</button>
+      <button onClick={()=>setViewMode("2d")} style={B(viewMode==="2d"?"#38bdf8":"#475569",viewMode==="2d"?"#082f49":"#071020",viewMode==="2d")}>2D</button>
+      <button onClick={()=>setViewMode("3d")} style={B(viewMode==="3d"?modColor:"#475569",viewMode==="3d"?hexToRgba(modColor,0.12):"#071020",viewMode==="3d")}>3D</button>
 
       {running&&<span style={{fontSize:8,color:"#22c55e",padding:"2px 8px",background:"#052e16",borderRadius:10,border:"1px solid #22c55e44",marginLeft:4}}>● AO VIVO</span>}
     </div>
@@ -2017,6 +2098,7 @@ function Toolbar({tool,setTool,sel,selComp,selWire,modColor,running,snap,ortho,z
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CANVAS ENGINE
+
 // ═══════════════════════════════════════════════════════════════════════════════
 const INIT={comps:[],wires:[]};
 
@@ -2036,6 +2118,8 @@ function Engine({modId,modColor,lib,onBack,userName}){
   const[running,setRunning]=useState(false);
   const[snap,setSnap]=useState(true);
   const[ortho,setOrtho]=useState(false);
+  const[viewMode,setViewMode]=useState("3d");
+  const[paletteFilter,setPaletteFilter]=useState("");
   const[sd,setSd]=useState(null);
   const[tick,setTick]=useState(0);
   const[status,_setS]=useState("Selecione ferramenta → clique no canvas");
@@ -2045,11 +2129,14 @@ function Engine({modId,modColor,lib,onBack,userName}){
 
   const selComp=comps.find(c=>c.id===sel);
   const selWire=wires.find(w=>w.id===sel);
-  const li_sel=selComp?lib.find(l=>l.t===selComp.t):null;
   const mod=MODS_ALL.find(m=>m.id===modId);
+  const filteredLib=useMemo(()=>{
+    const q=paletteFilter.trim().toLowerCase();
+    if(!q) return lib;
+    return lib.filter(l=>`${l.lbl} ${l.sym} ${l.tip} ${l.k}`.toLowerCase().includes(q));
+  },[lib,paletteFilter]);
 
   useEffect(()=>{if(running){const f=()=>{tickRef.current++;setTick(t=>t+1);animRef.current=requestAnimationFrame(f);};animRef.current=requestAnimationFrame(f);}else cancelAnimationFrame(animRef.current);return()=>cancelAnimationFrame(animRef.current);},[running]);
-
   useEffect(()=>{const cv=cvRef.current;if(!cv)return;const ro=new ResizeObserver(()=>{cv.width=cv.parentElement.offsetWidth;cv.height=cv.parentElement.offsetHeight;});ro.observe(cv.parentElement);return()=>ro.disconnect();},[]);
 
   useEffect(()=>{
@@ -2058,21 +2145,25 @@ function Engine({modId,modColor,lib,onBack,userName}){
     ctx.clearRect(0,0,W,H);
     drawGrid(ctx,W,H,pan,zoom);
     ctx.save();ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
-    wires.forEach(w=>drawWire(ctx,w,sel===w.id,running,modColor,tickRef.current));
-    if(wStart&&tool==="wire"){let ex=(mouse.x-pan.x)/zoom,ey=(mouse.y-pan.y)/zoom;if(ortho){if(Math.abs(ex-wStart.x)>Math.abs(ey-wStart.y))ey=wStart.y;else ex=wStart.x;}ctx.strokeStyle=wireColor;ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(wStart.x,wStart.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.setLineDash([]);}
+    wires.forEach(w=>drawWire(ctx,w,sel===w.id,running,modColor,tickRef.current,viewMode));
+    if(wStart&&tool==="wire"){
+      let ex=(mouse.x-pan.x)/zoom,ey=(mouse.y-pan.y)/zoom;
+      if(ortho){if(Math.abs(ex-wStart.x)>Math.abs(ey-wStart.y))ey=wStart.y;else ex=wStart.x;}
+      if(viewMode==="3d"){
+        ctx.strokeStyle=hexToRgba(wireColor,0.22);ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(wStart.x+1.5,wStart.y+2);ctx.lineTo(ex+1.5,ey+2);ctx.stroke();
+      }
+      ctx.strokeStyle=wireColor;ctx.lineWidth=2.2;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(wStart.x,wStart.y);ctx.lineTo(ex,ey);ctx.stroke();ctx.setLineDash([]);
+    }
     comps.forEach(c=>{
       let liveData=sd?.live?.byComp?.[c.id]||null;
       if(running){
         const t=tickRef.current;
-        // Animate cylinders: piston oscillates with tick
         if(["cyl","cylse","cylh"].includes(c.t)){
           const period=120,raw=(t%period)/period;
           const pct=raw<0.5?raw*2:2-raw*2;
           liveData={...(liveData||{}),pct};
         }
-        // Oscilloscope & encoder get tick for animation
-        if(["osc","enc"].includes(c.t)) liveData={...(liveData||{}),tick:t};
-        // Multimeter pointer animates
+        if(["osc","enc","servo","flowin","psu"].includes(c.t)) liveData={...(liveData||{}),tick:t};
         if(c.t==="mtr"&&sd?.live){
           const modes=["V","mA","Ω","AC"];const mode=modes[(c.mmode||0)%4];
           let mVal=0.5;
@@ -2082,17 +2173,13 @@ function Engine({modId,modColor,lib,onBack,userName}){
           else mVal=0.5+Math.sin(t*0.08)*0.3;
           liveData={...(liveData||{}),pct:Math.max(0,Math.min(1,mVal))};
         }
-        // Manometer & pressure switch
-        if(["manm","prs"].includes(c.t)){
-          liveData={...(liveData||{}),pct:0.6+Math.sin(t*0.05)*0.1};
-        }
-        // Wattmeter
+        if(["manm","prs","propv","preg"].includes(c.t)) liveData={...(liveData||{}),pct:0.6+Math.sin(t*0.05)*0.1};
         if(c.t==="watt"&&sd?.live) liveData={...(liveData||{}),pct:Math.min(1,sd.live.totalV*sd.live.totalI/100||0.5)};
       }
-      drawComp(ctx,c,sel===c.id,liveData,modColor);
+      drawComp(ctx,c,sel===c.id,liveData,modColor,viewMode);
     });
     ctx.restore();
-  },[comps,wires,sel,wStart,mouse,zoom,pan,tick,sd,running,modColor,tool,ortho,wireColor]);
+  },[comps,wires,sel,wStart,mouse,zoom,pan,tick,sd,running,modColor,tool,ortho,wireColor,viewMode]);
 
   const toW=useCallback((cx,cy)=>{const x=(cx-pan.x)/zoom,y=(cy-pan.y)/zoom;return snap?{x:SN(x),y:SN(y)}:{x:Math.round(x),y:Math.round(y)};},[pan,zoom,snap]);
   const hitComp=useCallback((wx,wy)=>comps.find(c=>Math.abs(c.x-wx)<G&&Math.abs(c.y-wy)<G),[comps]);
@@ -2119,12 +2206,37 @@ function Engine({modId,modColor,lib,onBack,userName}){
   const onDbl=useCallback(e=>{const rect=cvRef.current.getBoundingClientRect(),pos=toW(e.clientX-rect.left,e.clientY-rect.top),h=hitComp(pos.x,pos.y);if(!h)return;if(["inp","cno","cnf","sw"].includes(h.t)){push({comps:comps.map(c=>c.id===h.id?{...c,v:parseInt(c.v||0)?0:1}:c),wires});}else if(h.t==="mtr"){push({comps:comps.map(c=>c.id===h.id?{...c,mmode:((c.mmode||0)+1)%4}:c),wires});}else{setSel(h.id);}},[toW,hitComp,comps,wires,push]);
 
   const doRot=useCallback(delta=>{if(!sel)return;push({comps:comps.map(c=>c.id===sel?{...c,r:(((c.r||0)+delta)%360+360)%360}:c),wires});},[sel,comps,wires,push]);
+  const duplicateSelected=useCallback(()=>{
+    if(!selComp) return;
+    const base=selComp.n||selComp.t.toUpperCase();
+    let name=`${base}_copy`;
+    let idx=2;
+    while(comps.some(c=>c.n===name)) name=`${base}_copy${idx++}`;
+    const clone={...selComp,id:uid(),x:selComp.x+G,y:selComp.y+G,n:name};
+    push({comps:[...comps,clone],wires});
+    setSel(clone.id);
+    setStatus(`${name} duplicado`);
+  },[selComp,comps,wires,push,setStatus]);
   const calc=useCallback(()=>{const s=solve(modId,comps,wires);setSd(s);setStatus(s.ok?"✅ Calculado":"⚠️ Verifique o circuito");},[modId,comps,wires,setStatus]);
   const toggleSim=useCallback(()=>{setRunning(r=>{if(!r){const s=solve(modId,comps,wires);setSd(s);}return!r;});},[modId,comps,wires]);
   const clearAll=()=>{if(window.confirm("Limpar circuito?")){ dispatch({type:"RESET",p:INIT});setSd(null);setSel(null);}};
-  const saveJSON=()=>{const d=JSON.stringify({modId,comps,wires},null,2),a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(d);a.download=`techsim_${modId}_${Date.now()}.json`;a.click();};
-  const loadJSON=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);dispatch({type:"RESET",p:{comps:d.comps||[],wires:d.wires||[]}});setSd(null);setStatus("📂 Carregado!");}catch{setStatus("❌ Arquivo inválido");}};r.readAsText(f);e.target.value="";};
+  const exportPNG=()=>{const cv=cvRef.current;if(!cv)return;const a=document.createElement("a");a.href=cv.toDataURL("image/png");a.download=`techsim_${modId}_${viewMode}_${Date.now()}.png`;a.click();setStatus("🖼 PNG exportado");};
+  const saveJSON=()=>{const d=JSON.stringify({version:"2.0",modId,viewMode,comps,wires},null,2),a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(d);a.download=`techsim_${modId}_${Date.now()}.json`;a.click();};
+  const loadJSON=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);dispatch({type:"RESET",p:{comps:d.comps||[],wires:d.wires||[]}});if(d.viewMode)setViewMode(d.viewMode);setSd(null);setStatus("📂 Projeto carregado");}catch{setStatus("❌ Arquivo inválido");}};r.readAsText(f);e.target.value="";};
   const autoLayout=()=>{push({comps:comps.map((c,i)=>({...c,x:G*3+Math.floor(i%5)*G*3,y:G*3+Math.floor(i/5)*G*3})),wires:[]});setStatus("✨ Layout aplicado");};
+  const fitView=useCallback(()=>{
+    const cv=cvRef.current;
+    if(!cv||(!comps.length&&!wires.length)){setZoom(1);setPan({x:0,y:0});setStatus("Vista centralizada");return;}
+    const xs=[...comps.flatMap(c=>[c.x-64,c.x+64]),...wires.flatMap(w=>[w.x1,w.x2])];
+    const ys=[...comps.flatMap(c=>[c.y-64,c.y+64]),...wires.flatMap(w=>[w.y1,w.y2])];
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const spanX=Math.max(200,maxX-minX+160),spanY=Math.max(200,maxY-minY+160);
+    const nz=Math.min(2.2,Math.max(0.18,Math.min(cv.width/spanX,cv.height/spanY)));
+    const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+    setZoom(nz);
+    setPan({x:cv.width/2-cx*nz,y:cv.height/2-cy*nz});
+    setStatus("◎ Área ajustada ao projeto");
+  },[comps,wires,setStatus]);
 
   useEffect(()=>{
     const f=e=>{
@@ -2132,82 +2244,78 @@ function Engine({modId,modColor,lib,onBack,userName}){
       const ctrl=e.ctrlKey||e.metaKey;
       if(ctrl&&e.key==="z"){e.preventDefault();dispatch({type:"UNDO"});}
       else if(ctrl&&(e.key==="y")){e.preventDefault();dispatch({type:"REDO"});}
-      else if(ctrl&&e.key==="s"){e.preventDefault();saveJSON();}
-      else if(ctrl&&e.key==="o"){e.preventDefault();fileRef.current?.click();}
+      else if(ctrl&&e.key.toLowerCase()==="s"){e.preventDefault();saveJSON();}
+      else if(ctrl&&e.key.toLowerCase()==="o"){e.preventDefault();fileRef.current?.click();}
+      else if(ctrl&&e.key.toLowerCase()==="d"&&selComp){e.preventDefault();duplicateSelected();}
       else if(ctrl&&e.key==="ArrowRight"){e.preventDefault();doRot(90);}
       else if(ctrl&&e.key==="ArrowLeft"){e.preventDefault();doRot(-90);}
       else if(e.key==="F9"){e.preventDefault();calc();}
       else if(e.key==="F5"){e.preventDefault();toggleSim();}
-      else if(e.key==="F2"&&selComp){setSel(selComp.id);}
       else if(e.key==="Delete"&&sel){push({comps:comps.filter(c=>c.id!==sel),wires:wires.filter(w=>w.id!==sel)});setSel(null);}
       else if(e.key==="Escape"){setWStart(null);setSel(null);}
       else if(!ctrl&&!e.altKey){
-        if(e.key==="s"||e.key==="S")setTool("select");
+        if(e.key==="2")setViewMode("2d");
+        else if(e.key==="3")setViewMode("3d");
+        else if(e.key==="s"||e.key==="S")setTool("select");
         else if(e.key==="w"||e.key==="W")setTool("wire");
         else if(e.key==="d"||e.key==="D")setTool("delete");
         else{const l=lib.find(l=>l.k===e.key.toUpperCase());if(l)setTool(l.t);}
       }
     };
     window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);
-  },[sel,selComp,comps,wires,push,lib,doRot,calc,toggleSim]);
+  },[sel,selComp,comps,wires,push,lib,doRot,calc,toggleSim,duplicateSelected]);
 
   const TOOL_BTNS=[
-    {t:"select",lbl:"Mover",sym:"↖",col:"#fb7185",k:"S",tip:"Selecionar/mover [S]"},
-    {t:"wire",  lbl:"Fio",  sym:"⎯",col:"#94a3b8",k:"W",tip:"Traçar fio [W]"},
-    {t:"delete",lbl:"Apagar",sym:"✕",col:"#f87171",k:"D",tip:"Apagar comp/fio [D]"},
+    {t:"select",lbl:"Selecionar",sym:TOOL_GLYPHS.select,col:"#fb7185",k:"S",tip:"Selecionar/mover [S]"},
+    {t:"wire",  lbl:"Conectar", sym:TOOL_GLYPHS.wire,col:"#94a3b8",k:"W",tip:"Traçar fio [W]"},
+    {t:"delete",lbl:"Excluir",  sym:TOOL_GLYPHS.delete,col:"#f87171",k:"D",tip:"Apagar comp/fio [D]"},
   ];
 
   return(
     <div style={{display:"flex",flex:1,overflow:"hidden",height:"100%",fontFamily:"'Courier New','Consolas',monospace"}}>
-      {/* Palette */}
-      <div style={{width:84,background:"#040d18",borderRight:"1px solid #1e293b",display:"flex",flexDirection:"column",padding:"6px 4px",gap:2,overflowY:"auto",flexShrink:0}}>
-        <div style={{fontSize:7,color:"#1e3a5f",textAlign:"center",letterSpacing:1,padding:"2px 0",marginBottom:2}}>TOOLS</div>
+      <div style={{width:120,background:"#040d18",borderRight:"1px solid #1e293b",display:"flex",flexDirection:"column",padding:"8px 6px",gap:6,overflowY:"auto",flexShrink:0}}>
+        <div style={{fontSize:7,color:"#1e3a5f",textAlign:"center",letterSpacing:2,padding:"2px 0"}}>TOOLS</div>
         {TOOL_BTNS.map(x=>(
-          <button key={x.t} onClick={()=>setTool(x.t)} title={x.tip}
-            style={{background:tool===x.t?`${x.col}22`:"transparent",border:`1px solid ${tool===x.t?x.col:"#1e293b"}`,color:tool===x.t?x.col:"#334155",borderRadius:6,padding:"6px 2px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",fontSize:7,gap:2,fontFamily:"inherit",boxShadow:tool===x.t?`0 0 8px ${x.col}44`:"",transition:"all 0.12s"}}>
-            <span style={{fontSize:16}}>{x.sym}</span>{x.lbl}
+          <button key={x.t} onClick={()=>setTool(x.t)} title={x.tip} style={{background:tool===x.t?`${x.col}18`:"#050e1a",border:`1px solid ${tool===x.t?x.col:"#1e293b"}`,color:tool===x.t?x.col:"#334155",borderRadius:8,padding:"6px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,fontFamily:"inherit",boxShadow:tool===x.t?`0 0 14px ${hexToRgba(x.col,0.18)}`:"inset 0 1px 0 #ffffff08",transition:"all 0.12s"}}>
+            <div style={{width:36,height:24,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(180deg, ${hexToRgba(x.col,0.22)}, #071020)`,border:`1px solid ${hexToRgba(x.col,0.28)}`}}>
+              <span style={{fontSize:15,fontWeight:700,color:x.col}}>{x.sym}</span>
+            </div>
+            <span style={{fontSize:7,letterSpacing:0.4}}>{x.lbl}</span>
+            <span style={{fontSize:6,color:tool===x.t?x.col:"#475569",border:`1px solid ${tool===x.t?hexToRgba(x.col,0.4):"#1e293b"}`,padding:"1px 5px",borderRadius:99}}>{x.k}</span>
           </button>
         ))}
-        <div style={{height:1,background:"#1e293b",margin:"4px 2px"}}/>
-        <div style={{fontSize:7,color:"#1e3a5f",textAlign:"center",letterSpacing:1,padding:"2px 0"}}>COMP.</div>
-        {lib.map(l=>(
-          <button key={l.t} onClick={()=>setTool(l.t)} title={`${l.lbl} [${l.k}]`}
-            style={{background:tool===l.t?`${l.col}22`:"transparent",border:`1px solid ${tool===l.t?l.col:"#1e293b"}`,color:tool===l.t?l.col:"#334155",borderRadius:6,padding:"4px 2px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",fontSize:6.5,gap:1,fontFamily:"inherit",boxShadow:tool===l.t?`0 0 6px ${l.col}33`:"",transition:"all 0.1s"}}>
-            <span style={{fontSize:10,fontWeight:700,color:tool===l.t?l.col:"#3a5a70"}}>{l.sym}</span>
-            <span style={{fontSize:5.5,textAlign:"center",lineHeight:1.2,color:tool===l.t?l.col:"#334155",maxWidth:72,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.lbl}</span>
+        <div style={{height:1,background:"#1e293b",margin:"2px 2px"}}/>
+        <div style={{fontSize:7,color:"#1e3a5f",textAlign:"center",letterSpacing:2,padding:"2px 0"}}>COMP. {filteredLib.length!==lib.length?`${filteredLib.length}/${lib.length}`:lib.length}</div>
+        <input value={paletteFilter} onChange={e=>setPaletteFilter(e.target.value)} placeholder="buscar" style={{background:"#071020",border:"1px solid #1e293b",color:"#cbd5e1",padding:"6px 8px",borderRadius:7,fontSize:10,fontFamily:"inherit",outline:"none"}}/>
+        {filteredLib.map(l=>(
+          <button key={l.t} onClick={()=>setTool(l.t)} title={`${l.lbl} [${l.k}]`} style={{background:tool===l.t?`${l.col}18`:"#050e1a",border:`1px solid ${tool===l.t?l.col:"#1e293b"}`,color:tool===l.t?l.col:"#334155",borderRadius:8,padding:"6px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontFamily:"inherit",boxShadow:tool===l.t?`0 0 12px ${hexToRgba(l.col,0.16)}`:"inset 0 1px 0 #ffffff08",transition:"all 0.1s"}}>
+            <div style={{width:40,height:24,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(180deg, ${hexToRgba(l.col,0.20)}, #071020)`,border:`1px solid ${hexToRgba(l.col,0.28)}`}}>
+              <span style={{fontSize:11,fontWeight:700,color:tool===l.t?l.col:shiftHex(l.col,0.08)}}>{l.sym}</span>
+            </div>
+            <span style={{fontSize:6.2,textAlign:"center",lineHeight:1.15,color:tool===l.t?l.col:"#94a3b8"}}>{l.lbl}</span>
+            <span style={{fontSize:5.8,color:tool===l.t?l.col:"#475569",border:`1px solid ${tool===l.t?hexToRgba(l.col,0.4):"#1e293b"}`,padding:"1px 5px",borderRadius:99}}>{l.k}</span>
           </button>
         ))}
+        {!filteredLib.length&&<div style={{fontSize:8,color:"#475569",textAlign:"center",padding:"10px 6px",border:"1px dashed #1e293b",borderRadius:8}}>Sem resultados</div>}
       </div>
 
-      {/* Canvas area */}
-      <div style={{flex:1,position:"relative",overflow:"hidden",background:"#020b14"}}>
-        <canvas ref={cvRef}
-          style={{display:"block",width:"100%",height:"100%",cursor:isPan.current?"grabbing":drag?"grabbing":tool==="wire"?"crosshair":tool==="delete"?"not-allowed":tool==="select"?"grab":"copy"}}
-          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
-          onDoubleClick={onDbl} onContextMenu={e=>{e.preventDefault();isPan.current=false;}}/>
+      <div style={{flex:1,position:"relative",overflow:"hidden",background:viewMode==="3d"?"radial-gradient(circle at top, #082033 0%, #020b14 55%)":"#020b14"}}>
+        <canvas ref={cvRef} style={{display:"block",width:"100%",height:"100%",cursor:isPan.current?"grabbing":drag?"grabbing":tool==="wire"?"crosshair":tool==="delete"?"not-allowed":tool==="select"?"grab":"copy"}} onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onDoubleClick={onDbl} onContextMenu={e=>{e.preventDefault();isPan.current=false;}}/>
 
-        <Toolbar tool={tool} setTool={setTool} sel={sel} selComp={selComp} selWire={selWire}
-          modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist}
-          comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={setSel}
-          setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan}
-          doRot={doRot} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON}
-          fileRef={fileRef} clearAll={clearAll} autoLayout={autoLayout} modId={modId}
-          wireColor={wireColor} setWireColor={setWireColor}/>
+        <Toolbar tool={tool} setTool={setTool} sel={sel} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={setSel} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={doRot} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={autoLayout} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} duplicateSelected={duplicateSelected} fitView={fitView}/>
 
         <input ref={fileRef} type="file" accept=".json" onChange={loadJSON} style={{display:"none"}}/>
 
-        {/* Status bar */}
-        <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#040d18cc",borderTop:"1px solid #1e293b",padding:"2px 12px",display:"flex",gap:10,fontSize:8,color:"#334155",alignItems:"center"}}>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#040d18cc",borderTop:"1px solid #1e293b",padding:"3px 12px",display:"flex",gap:10,fontSize:8,color:"#334155",alignItems:"center"}}>
           <span style={{color:status.startsWith("✅")?"#22c55e":status.startsWith("⚠️")||status.startsWith("❌")?"#f87171":"#3a5a70",minWidth:220}}>{status}</span>
           <span>C:{comps.length}</span><span>F:{wires.length}</span>
+          <span style={{color:viewMode==="3d"?modColor:"#38bdf8"}}>VIEW:{viewMode.toUpperCase()}</span>
           {running&&<span style={{color:"#22c55e"}}>● SIMULANDO</span>}
-          <span style={{marginLeft:"auto",opacity:0.5}}>S=Mover W=Fio D=Del Dbl=Edit F9=Calc F5=Sim Ctrl+Z/Y Del=Apagar ESC=Cancelar</span>
+          <span style={{marginLeft:"auto",opacity:0.5}}>S=Mover W=Fio D=Del 2/3=View Ctrl+D=Duplicar Ctrl+Z/Y F9=Calc F5=Sim ESC=Cancelar</span>
         </div>
       </div>
 
-      {/* Right panel — properties + results */}
       <div style={{width:256,background:"#040d18",borderLeft:"1px solid #1e293b",display:"flex",flexDirection:"column",flexShrink:0}}>
-        {/* Panel header */}
         <div style={{padding:"10px 12px",borderBottom:"1px solid #1e293b",flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:16}}>{mod?.icon}</span>
           <div>
@@ -2215,8 +2323,7 @@ function Engine({modId,modColor,lib,onBack,userName}){
             <div style={{fontSize:8,color:"#334155"}}>{mod?.desc}</div>
           </div>
         </div>
-        <PropertiesPanel comp={selComp} lib={lib} modColor={modColor} comps={comps} wires={wires}
-          push={push} setSel={setSel} sd={sd} onCalc={calc} onToggleSim={toggleSim} running={running} hist={hist}/>
+        <PropertiesPanel comp={selComp} lib={lib} modColor={modColor} comps={comps} wires={wires} push={push} setSel={setSel} sd={sd} onCalc={calc} onToggleSim={toggleSim} running={running} hist={hist}/>
       </div>
     </div>
   );
@@ -2224,6 +2331,7 @@ function Engine({modId,modColor,lib,onBack,userName}){
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // APP SHELL — routing between landing / auth / dashboard / editor
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════════════
 // ADMIN DASHBOARD
@@ -2254,14 +2362,14 @@ function AdminDashboard({user,onBack}){
     {name:"Pedro N.",email:"pedro@mec.com",mod:"Hidro",time:"45min",plan:"FREE"},
   ];
   const modules=[
-    {id:"dc",icon:"🔌",label:"DC",sessions:52,col:"#22d3ee"},
-    {id:"ac",icon:"⚡",label:"AC",sessions:38,col:"#f59e0b"},
-    {id:"pneum",icon:"💨",label:"Pneum",sessions:31,col:"#a78bfa"},
-    {id:"hidro",icon:"💧",label:"Hidro",sessions:18,col:"#38bdf8"},
-    {id:"logic",icon:"🔲",label:"Lógica",sessions:29,col:"#4ade80"},
-    {id:"cmd",icon:"🏭",label:"Cmds",sessions:22,col:"#fb923c"},
-    {id:"install",icon:"🏗",label:"Instal",sessions:14,col:"#f43f5e"},
-    {id:"ladder",icon:"🖥",label:"Ladder",sessions:20,col:"#c084fc"},
+    {id:"dc",icon:MODULE_GLYPHS.dc,label:"DC",sessions:52,col:"#22d3ee"},
+    {id:"ac",icon:MODULE_GLYPHS.ac,label:"AC",sessions:38,col:"#f59e0b"},
+    {id:"pneum",icon:MODULE_GLYPHS.pneum,label:"Pneum",sessions:31,col:"#a78bfa"},
+    {id:"hidro",icon:MODULE_GLYPHS.hidro,label:"Hidro",sessions:18,col:"#38bdf8"},
+    {id:"logic",icon:MODULE_GLYPHS.logic,label:"Lógica",sessions:29,col:"#4ade80"},
+    {id:"cmd",icon:MODULE_GLYPHS.cmd,label:"Cmds",sessions:22,col:"#fb923c"},
+    {id:"install",icon:MODULE_GLYPHS.install,label:"Instal",sessions:14,col:"#f43f5e"},
+    {id:"ladder",icon:MODULE_GLYPHS.ladder,label:"Ladder",sessions:20,col:"#c084fc"},
   ];
   const totalSessions=modules.reduce((s,m)=>s+m.sessions,0);
   const systemEvents=[
