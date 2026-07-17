@@ -1,73 +1,53 @@
 # Techsim
 
-Techsim é uma plataforma visual de simulação técnica focada em circuitos, automação e sistemas industriais. O projeto reúne múltiplos módulos em um único editor com canvas interativo, cálculos rápidos e fluxo de trabalho voltado para prototipagem educacional e demonstrações.
+Techsim é uma plataforma visual de simulação técnica focada em circuitos, automação e sistemas industriais. A base agora foi reorganizada em módulos menores, com presets por disciplina e uma camada de serviços pronta para backend/autenticação real.
 
-## O que foi melhorado nesta versão
+## O que entrou nesta revisão
 
-- visual das ferramentas mais tecnológico, com paleta redesenhada
-- busca rápida de componentes na barra lateral
-- duplicação de componente selecionado com `Ctrl + D`
-- exportação do canvas em `PNG`
-- modo de visualização `2D` e `3D`
-- botão `Fit View` para enquadrar automaticamente o projeto
-- persistência do modo de visualização no arquivo JSON exportado
-- README refeito com documentação de uso
+- separação do antigo arquivo único em `src/components`, `src/canvas`, `src/core`, `src/data` e `src/services`
+- paleta lateral com símbolos mais tecnológicos e cards de componente mais legíveis
+- presets prontos por módulo para abrir projetos-base em um clique
+- persistência de projetos em serviço desacoplado (`localStorage` por padrão, API pronta para plugar)
+- autenticação desacoplada com fallback local e contrato preparado para backend real
+- exportação principal mantida em `techsim-circuits.jsx` para compatibilidade
 
-## Módulos disponíveis
+## Estrutura nova
 
-- Corrente Contínua
-- Corrente Alternada
-- Pneumática
-- Hidráulica
-- Lógica Digital
-- Comandos Elétricos
-- Instalações
-- Ladder / CLP
+- `techsim-circuits.jsx` — ponto de entrada compatível, reexportando a app modular
+- `src/App.jsx` — shell principal e navegação
+- `src/components/` — landing, auth, dashboard, editor, toolbar, painel de propriedades e admin
+- `src/canvas/shapes.jsx` — renderização e visual dos símbolos/componentes
+- `src/core/` — histórico e solvers
+- `src/data/modules.js` — biblioteca de módulos, componentes e presets
+- `src/services/auth.js` — autenticação local/remota
+- `src/services/projects.js` — persistência local/remota de projetos
+- `src/services/backend.js` — configuração da integração futura com API
 
-## Funcionalidades principais
+## Presets por módulo
 
-- canvas com pan, zoom e snap-to-grid
-- criação e edição de fios
-- rotação de componentes
-- undo / redo com histórico
-- cálculo e simulação ao vivo
-- propriedades editáveis por componente
-- salvar e abrir projetos em JSON
-- exportar imagem do projeto em PNG
+Cada módulo possui ao menos um projeto pronto para acelerar testes e demonstrações:
 
-## Novos atalhos úteis
+- DC: LED com resistor
+- AC: RLC série
+- Pneumática: cilindro de dupla ação
+- Hidráulica: circuito hidráulico básico
+- Lógica: AND com saída
+- Comandos: partida direta
+- Instalações: quadro residencial
+- Ladder: start/stop com bobina
 
-- `S` selecionar/mover
-- `W` traçar fio
-- `D` apagar
-- `2` modo 2D
-- `3` modo 3D
-- `Ctrl + D` duplicar componente selecionado
-- `Ctrl + Z / Ctrl + Y` desfazer / refazer
-- `Ctrl + S / Ctrl + O` salvar / abrir JSON
-- `F5` simular
-- `F9` calcular
+## Backend e autenticação
 
-## Estrutura do projeto
+A base foi preparada para evoluir sem reescrever a UI:
 
-Atualmente o repositório está concentrado principalmente em um arquivo principal:
-
-- `techsim-circuits.jsx` — aplicação React com landing page, dashboard, editor, módulos, componentes e solver
+- autenticação usa `src/services/auth.js`
+- persistência de projetos usa `src/services/projects.js`
+- endpoints remotos podem ser ligados por variáveis como `REACT_APP_API_URL` ou `VITE_API_URL`
+- sem backend configurado, o sistema usa armazenamento local para continuar funcional
 
 ## Como usar
 
-### 1. Integrar em um projeto React
-
-Importe o arquivo principal em um projeto React existente:
-
 ```jsx
-import App from "./techsim-circuits.jsx";
-```
-
-### 2. Renderizar o componente
-
-```jsx
-import React from "react";
 import App from "./techsim-circuits.jsx";
 
 export default function Root() {
@@ -75,24 +55,9 @@ export default function Root() {
 }
 ```
 
-## Fluxo recomendado
+## Próximos passos naturais
 
-1. escolha um módulo no dashboard
-2. adicione componentes pela paleta lateral
-3. conecte os elementos com a ferramenta de fio
-4. ajuste propriedades no painel direito
-5. execute cálculo com `F9`
-6. ative simulação com `F5`
-7. exporte em JSON ou PNG
-
-## Próximos passos sugeridos
-
-- separar o grande arquivo JSX em componentes menores
-- adicionar testes para os solvers
-- criar persistência local ou backend
-- padronizar tema visual e sistema de design
-- transformar a biblioteca de símbolos em catálogo independente
-
-## Licença
-
-Defina a licença desejada para o projeto antes de publicar comercialmente.
+- conectar `auth.js` a JWT/session real
+- ligar `projects.js` a banco e API multiusuário
+- versionar projetos e presets customizados por equipe
+- adicionar testes automatizados para os solvers
