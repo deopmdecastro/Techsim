@@ -1,63 +1,169 @@
-# Techsim
+# Techsim Platform
 
-Techsim é uma plataforma visual de simulação técnica focada em circuitos, automação e sistemas industriais. A base agora foi reorganizada em módulos menores, com presets por disciplina e uma camada de serviços pronta para backend/autenticação real.
+Techsim foi modernizado para uma base full-stack preparada para crescer como uma plataforma industrial de edição e simulação elétrica, pneumática, hidráulica e PLC.
 
-## O que entrou nesta revisão
+## O que foi entregue nesta modernização
 
-- separação do antigo arquivo único em `src/components`, `src/canvas`, `src/core`, `src/data` e `src/services`
-- paleta lateral com símbolos mais tecnológicos e cards de componente mais legíveis
-- presets prontos por módulo para abrir projetos-base em um clique
-- persistência de projetos em serviço desacoplado (`localStorage` por padrão, API pronta para plugar)
-- autenticação desacoplada com fallback local e contrato preparado para backend real
-- exportação principal mantida em `techsim-circuits.jsx` para compatibilidade
+### Arquitetura
+- Stack preparada para **Docker Compose** com:
+  - Frontend Vite + React
+  - Backend Node.js + Express
+  - PostgreSQL
+  - Redis
+  - Nginx como reverse proxy
+- Ambientes separados:
+  - `docker-compose.yml` + `docker-compose.dev.yml` para desenvolvimento com hot reload
+  - `docker-compose.yml` + `docker-compose.prod.yml` para produção
+- Configuração centralizada via `.env`
+- Backend com JWT, REST API, uploads, auditoria e WebSockets (`socket.io`)
 
-## Estrutura nova
+### Frontend
+- Shell visual modernizado com suporte a **Dark / Light Mode**
+- Editor com:
+  - zoom / pan
+  - snap to grid
+  - páginas múltiplas
+  - undo / redo ilimitado
+  - atalhos de teclado
+  - presets por disciplina
+  - exportação JSON e PNG
+- Biblioteca expandida para componentes industriais reais
 
-- `techsim-circuits.jsx` — ponto de entrada compatível, reexportando a app modular
-- `src/App.jsx` — shell principal e navegação
-- `src/components/` — landing, auth, dashboard, editor, toolbar, painel de propriedades e admin
-- `src/canvas/shapes.jsx` — renderização e visual dos símbolos/componentes
-- `src/core/` — histórico e solvers
-- `src/data/modules.js` — biblioteca de módulos, componentes e presets
-- `src/services/auth.js` — autenticação local/remota
-- `src/services/projects.js` — persistência local/remota de projetos
-- `src/services/backend.js` — configuração da integração futura com API
+### Simulação e bibliotecas
+Foram expandidas as bibliotecas para cobrir melhor cenários de:
+- potência DC
+- potência AC
+- comandos elétricos
+- pneumática
+- hidráulica
+- lógica digital
+- instalações
+- ladder / CLP
+- PLC / automação (Siemens, Allen-Bradley, Schneider, Omron, etc.)
 
-## Presets por módulo
+### Backend e dados
+- Modelo relacional com tabelas para:
+  - utilizadores
+  - projetos
+  - versões de projeto
+  - comentários
+  - auditoria
+- API pronta para evoluir com colaboração em tempo real
+- Redis preparado para cache de bibliotecas e otimizações futuras
 
-Cada módulo possui ao menos um projeto pronto para acelerar testes e demonstrações:
+---
 
-- DC: LED com resistor
-- AC: RLC série
-- Pneumática: cilindro de dupla ação
-- Hidráulica: circuito hidráulico básico
-- Lógica: AND com saída
-- Comandos: partida direta
-- Instalações: quadro residencial
-- Ladder: start/stop com bobina
+## Estrutura do projeto
 
-## Backend e autenticação
-
-A base foi preparada para evoluir sem reescrever a UI:
-
-- autenticação usa `src/services/auth.js`
-- persistência de projetos usa `src/services/projects.js`
-- endpoints remotos podem ser ligados por variáveis como `REACT_APP_API_URL` ou `VITE_API_URL`
-- sem backend configurado, o sistema usa armazenamento local para continuar funcional
-
-## Como usar
-
-```jsx
-import App from "./techsim-circuits.jsx";
-
-export default function Root() {
-  return <App />;
-}
+```text
+.
+├─ src/                     # frontend React/Vite
+├─ backend/                 # API Node.js/Express + WebSockets
+├─ infra/
+│  ├─ nginx/                # reverse proxy dev/prod
+│  └─ postgres/init/        # schema inicial da base de dados
+├─ docker-compose.yml
+├─ docker-compose.dev.yml
+├─ docker-compose.prod.yml
+├─ Dockerfile               # frontend
+└─ backend/Dockerfile       # backend
 ```
 
-## Próximos passos naturais
+---
 
-- conectar `auth.js` a JWT/session real
-- ligar `projects.js` a banco e API multiusuário
-- versionar projetos e presets customizados por equipe
-- adicionar testes automatizados para os solvers
+## Variáveis de ambiente
+
+Copie o exemplo antes de arrancar:
+
+```bash
+cp .env.example .env
+```
+
+Principais variáveis:
+- `VITE_API_URL`
+- `VITE_REALTIME_URL`
+- `JWT_SECRET`
+- `POSTGRES_HOST`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `REDIS_URL`
+
+---
+
+## Desenvolvimento com Docker Compose
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+Acesso esperado:
+- App: `http://localhost:8080`
+- Vite direto: `http://localhost:5173`
+- API: `http://localhost:8080/api`
+
+Hot reload:
+- frontend com Vite
+- backend com Nodemon
+
+---
+
+## Produção com Docker Compose
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```
+
+---
+
+## Execução sem Docker
+
+### Frontend
+```bash
+npm install
+npm run dev
+```
+
+### Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+---
+
+## Endpoints principais
+
+### Auth
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+### Projetos
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/:id`
+- `PUT /api/projects/:id`
+- `GET /api/projects/:id/versions`
+- `GET /api/projects/:id/comments`
+- `POST /api/projects/:id/comments`
+
+### Bibliotecas
+- `GET /api/libraries`
+
+### Saúde
+- `GET /api/health`
+
+---
+
+## Estado atual
+
+Esta revisão entrega a **fundação arquitetural moderna** e uma **biblioteca industrial muito mais rica**, mantendo a base pronta para a próxima fase:
+- colaboração multiutilizador em tempo real mais profunda
+- simulação física ainda mais fiel por disciplina
+- exportação SVG/PDF nativa
+- editor avançado com agrupamento, camadas visuais e comentários ancorados no canvas
+- validação elétrica/hidráulica/pneumática com regras mais rigorosas
+
+A plataforma já está preparada para evoluir de forma incremental sem reescrever frontend, backend ou infraestrutura.

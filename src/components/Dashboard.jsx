@@ -1,16 +1,11 @@
 import { useMemo, useState } from "react";
-import { MODULE_GLYPHS, hexToRgba, shiftHex } from "../constants";
+import { hexToRgba, shiftHex } from "../constants";
+import { MODS_ALL } from "../data/modules";
 
-const MODULES = [
-  { id:"dc", icon:MODULE_GLYPHS.dc, label:"Corrente Contínua", color:"#22d3ee", desc:"DC · Ohm · KVL · Thévenin", docs:"Lei de Ohm, KVL, KCL, Thévenin/Norton" },
-  { id:"ac", icon:MODULE_GLYPHS.ac, label:"Corrente Alternada", color:"#f59e0b", desc:"AC · RLC · Fasores · FP", docs:"Impedância, reatância, potência e fator de potência" },
-  { id:"pneum", icon:MODULE_GLYPHS.pneum, label:"Pneumática", color:"#a78bfa", desc:"Válvulas · Cilindros · Pressão", docs:"Força, consumo de ar e válvulas 3/2, 5/2, 5/3" },
-  { id:"hidro", icon:MODULE_GLYPHS.hidro, label:"Hidráulica", color:"#38bdf8", desc:"Bombas · Cilindros · Pascal", docs:"Potência hidráulica, vazão, força e velocidade" },
-  { id:"logic", icon:MODULE_GLYPHS.logic, label:"Lógica Digital", color:"#4ade80", desc:"AND · OR · NOT · XOR", docs:"Tabela verdade, portas, flip-flops e blocos de PLC" },
-  { id:"cmd", icon:MODULE_GLYPHS.cmd, label:"Comandos Elétricos", color:"#fb923c", desc:"Contatores · Motores · Relés", docs:"Partida direta, proteção térmica e acionamentos" },
-  { id:"install", icon:MODULE_GLYPHS.install, label:"Instalações", color:"#f43f5e", desc:"NBR 5410 · Proteção", docs:"Dimensionamento, tomadas, iluminação e quadro" },
-  { id:"ladder", icon:MODULE_GLYPHS.ladder, label:"Ladder / CLP", color:"#c084fc", desc:"Contatos · Bobinas · Timers", docs:"Rungs, endereçamento e lógica industrial" },
-];
+const MODULES = MODS_ALL.map(module => ({
+  ...module,
+  docs: module.desc,
+}));
 
 const SHORTCUTS = [
   ["S", "Selecionar / mover"], ["W", "Traçar fio"], ["D", "Apagar"],
@@ -53,7 +48,7 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
   const stats = useMemo(() => {
     const presetCount = Object.values(presetCatalog).reduce((sum, list) => sum + (list?.length || 0), 0);
     return [
-      { label:"Módulos", value:"8", icon:"🧩", color:"#22d3ee" },
+      { label:"Módulos", value:String(MODULES.length), icon:"🧩", color:"#22d3ee" },
       { label:"Presets", value:String(presetCount), icon:"🗂️", color:"#4ade80" },
       { label:"Projetos", value:String(recentProjects.length), icon:"📁", color:"#f59e0b" },
       { label:"Views", value:"2D/3D", icon:"👁️", color:"#a78bfa" },

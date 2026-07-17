@@ -5,7 +5,7 @@ export function Toolbar({
   tool, setTool, sel, selComp, selWire, modColor, running, snap, ortho, zoom, hist,
   comps, wires, push, dispatch, setSel, setSnap, setOrtho, setZoom, setPan,
   doRot, calc, toggleSim, saveJSON, fileRef, clearAll, autoLayout,
-  wireColor, setWireColor, viewMode, setViewMode, exportPNG,
+  wireColor, setWireColor, viewMode, setViewMode, exportPNG, exportSVG,
   duplicateSelected, fitView, saveProjectSnapshot,
 }) {
   const [showWireColors, setShowWireColors] = useState(false);
@@ -84,6 +84,7 @@ export function Toolbar({
       <button onClick={saveJSON} title="Exportar JSON" style={buttonStyle("#64748b")}>💾 JSON</button>
       <button onClick={() => fileRef.current?.click()} title="Abrir JSON" style={buttonStyle("#64748b")}>📂 Abrir</button>
       <button onClick={exportPNG} title="Exportar PNG" style={buttonStyle("#64748b")}>🖼 PNG</button>
+      <button onClick={exportSVG} title="Exportar SVG" style={buttonStyle("#64748b")}>🧭 SVG</button>
       <button onClick={autoLayout} title="Auto Layout" style={buttonStyle("#64748b")}>✨ Layout</button>
       <button onClick={clearAll} title="Limpar" style={buttonStyle("#f87171")}>🗑 Limpar</button>
       {separator}

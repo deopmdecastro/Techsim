@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log*
+dist
+coverage
+.env
+.env.*
+!.env.example
+backend/uploads
+backend/node_modules
+backend/.env
+backend/.env.*
+postgres-data
+redis-data
+.DS_Store

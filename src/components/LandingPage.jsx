@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MODULE_GLYPHS } from '../constants';
+import { MODS_ALL } from '../data/modules';
 
 export function LandingPage({ onLogin, onRegister }) {
   const [hov, setHov] = useState(null);
@@ -18,16 +18,7 @@ export function LandingPage({ onLogin, onRegister }) {
   const nodeWires = [[80,95,210,55],[210,55,340,95],[340,95,470,55],[470,55,570,95],[570,95,570,165],[570,165,80,165],[80,165,80,95]];
   const animWire = (i) => (tick % nodeWires.length) === i;
 
-  const mods = [
-    {icon:MODULE_GLYPHS.dc,label:"Corrente Contínua", col:"#22d3ee",desc:"DC · Ohm · KVL · Thévenin"},
-    {icon:MODULE_GLYPHS.ac,label:"Corrente Alternada", col:"#f59e0b",desc:"AC · RLC · Fasores · FP"},
-    {icon:MODULE_GLYPHS.pneum,label:"Pneumática",         col:"#a78bfa",desc:"Válvulas · Cilindros · Força"},
-    {icon:MODULE_GLYPHS.hidro,label:"Hidráulica",         col:"#38bdf8",desc:"Bombas · Pascal · Potência"},
-    {icon:MODULE_GLYPHS.logic,label:"Lógica Digital",     col:"#4ade80",desc:"AND/OR/NOT/XOR · FF-SR"},
-    {icon:MODULE_GLYPHS.cmd,label:"Comandos Elétricos", col:"#fb923c",desc:"Motores 3φ · Contatores"},
-    {icon:MODULE_GLYPHS.install, label:"Instalações",        col:"#f43f5e",desc:"NBR 5410 · Dimensionamento"},
-    {icon:MODULE_GLYPHS.ladder, label:"Ladder / CLP",       col:"#c084fc",desc:"Contatos · Bobinas · Timers"},
-  ];
+  const mods = MODS_ALL.map(module => ({ icon:module.icon, label:module.label, col:module.color, desc:module.desc }));
 
   const features = [
     {icon:"⟳",title:"Girar Componentes",    desc:"Ctrl+← → ou painel lateral · 4 orientações"},
@@ -36,7 +27,7 @@ export function LandingPage({ onLogin, onRegister }) {
     {icon:"▣",title:"Modo 2D / 3D",          desc:"Visual técnico plano ou com profundidade para inspeção"},
     {icon:"⌗",title:"Endereçamento CLP",     desc:"Defina I0.0, Q0.1, M0.0 em cada componente"},
     {icon:"⬒",title:"Salvar / PNG / JSON",   desc:"Exportação rápida para projetos portáveis e documentação"},
-    {icon:"↩",title:"Undo/Redo 60 níveis",   desc:"Nunca perca trabalho · Ctrl+Z/Y"},
+    {icon:"↩",title:"Undo/Redo ilimitado",   desc:"Nunca perca trabalho · Ctrl+Z/Y"},
     {icon:"◎",title:"Ajuste Automático",     desc:"Fit View, auto layout e simulação ao vivo no mesmo canvas"},
   ];
 
@@ -82,7 +73,7 @@ export function LandingPage({ onLogin, onRegister }) {
         {/* Left text */}
         <div>
           <div style={{display:"inline-block",background:"#22d3ee14",border:"1px solid #22d3ee33",borderRadius:20,padding:"4px 14px",fontSize:9,color:"#22d3ee",letterSpacing:3,marginBottom:24}}>
-            ⚡ PLATAFORMA PROFISSIONAL · 8 MÓDULOS
+            ⚡ PLATAFORMA PROFISSIONAL · {mods.length} MÓDULOS
           </div>
           <h1 style={{margin:"0 0 20px",fontSize:"clamp(32px,4vw,58px)",fontWeight:700,lineHeight:1.1,letterSpacing:-1}}>
             <span style={{color:"#e2e8f0"}}>Projete.</span><br/>
@@ -90,7 +81,7 @@ export function LandingPage({ onLogin, onRegister }) {
             <span style={{color:"#94a3b8"}}>Calcule.</span>
           </h1>
           <p style={{fontSize:14,color:"#4a6a80",lineHeight:1.9,maxWidth:420,marginBottom:36}}>
-            Canvas interativo de engenharia com 8 módulos especializados. Cálculos em tempo real, análise de circuitos e simulação ao vivo.
+            Canvas interativo de engenharia com {mods.length} módulos especializados. Cálculos em tempo real, análise de circuitos e simulação ao vivo.
           </p>
           <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
             <button onClick={onRegister}
@@ -107,7 +98,7 @@ export function LandingPage({ onLogin, onRegister }) {
             </button>
           </div>
           <div style={{display:"flex",gap:28,marginTop:40}}>
-            {[["8","Módulos"],["2","Views 2D/3D"],["PNG","Exportação"]].map(([v,l])=>(
+            {[[String(mods.length),"Módulos"],["2","Views 2D/3D"],["PNG","Exportação"]].map(([v,l])=>(
               <div key={l}>
                 <div style={{fontSize:24,fontWeight:700,color:"#22d3ee",textShadow:"0 0 16px #22d3ee44"}}>{v}</div>
                 <div style={{fontSize:9,color:"#334155",letterSpacing:2,marginTop:2}}>{l}</div>
@@ -160,7 +151,7 @@ export function LandingPage({ onLogin, onRegister }) {
       <section style={{position:"relative",zIndex:5,padding:"60px 72px",borderTop:"1px solid #1e293b22"}}>
         <div style={{textAlign:"center",marginBottom:48}}>
           <div style={{fontSize:9,letterSpacing:5,color:"#22d3ee66",marginBottom:8}}>MÓDULOS</div>
-          <div style={{fontSize:28,fontWeight:700,color:"#e2e8f0",letterSpacing:-0.5}}>8 Disciplinas de Engenharia</div>
+          <div style={{fontSize:28,fontWeight:700,color:"#e2e8f0",letterSpacing:-0.5}}>{mods.length} Disciplinas de Engenharia</div>
           <div style={{fontSize:12,color:"#334155",marginTop:8}}>Cada módulo com canvas dedicado, componentes específicos e solver completo</div>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,maxWidth:1100,margin:"0 auto"}}>

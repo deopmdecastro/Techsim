@@ -1,35 +1,52 @@
-const env = typeof process !== "undefined" ? process.env || {} : {};
+const env = typeof import.meta !== 'undefined' ? import.meta.env || {} : {};
+
+const AUTH_TOKEN_KEY = 'techsim.auth.token';
 
 export const backendConfig = {
-  baseUrl: env.REACT_APP_API_URL || env.VITE_API_URL || "",
-  authMode: env.REACT_APP_AUTH_MODE || env.VITE_AUTH_MODE || "local",
-  projectMode: env.REACT_APP_PROJECT_MODE || env.VITE_PROJECT_MODE || "local",
-  realtimeUrl: env.REACT_APP_REALTIME_URL || env.VITE_REALTIME_URL || "",
+  baseUrl: env.VITE_API_URL || '',
+  authMode: env.VITE_AUTH_MODE || 'local',
+  projectMode: env.VITE_PROJECT_MODE || 'local',
+  realtimeUrl: env.VITE_REALTIME_URL || '',
+  appName: env.VITE_APP_NAME || 'Techsim Platform',
 };
 
 export const isRemoteBackendEnabled = () => Boolean(backendConfig.baseUrl);
 
+export function getAuthToken() {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem(AUTH_TOKEN_KEY) || '';
+}
+
+export function setAuthToken(token) {
+  if (typeof window === 'undefined') return;
+  if (!token) window.localStorage.removeItem(AUTH_TOKEN_KEY);
+  else window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
 export async function backendRequest(path, options = {}) {
   if (!isRemoteBackendEnabled()) {
-    throw new Error("Backend remoto não configurado.");
+    throw new Error('Backend remoto não configurado.');
   }
 
+  const token = getAuthToken();
   const response = await fetch(`${backendConfig.baseUrl}${path}`, {
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
   });
 
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json')
+    ? await response.json().catch(() => ({}))
+    : await response.text().catch(() => '');
+
   if (!response.ok) {
-    const message = await response.text().catch(() => "Falha inesperada na API.");
+    const message = typeof payload === 'string' ? payload : payload.message;
     throw new Error(message || `Erro HTTP ${response.status}`);
   }
 
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return response.json();
-  }
-  return response.text();
+  return payload;
 }

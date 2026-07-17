@@ -9,13 +9,34 @@ import { Toolbar } from "./Toolbar";
 
 const deepClone = value => JSON.parse(JSON.stringify(value));
 
-function formatProjectPayload(payload) {
-  const data = payload?.data || payload || {};
+function normalizePages(rawData = {}, fallbackViewMode = '3d') {
+  const base = rawData?.data || rawData || {};
+  const pages = Array.isArray(base.pages) && base.pages.length
+    ? base.pages.map((page, index) => ({
+        id: page.id || `page-${index + 1}`,
+        name: page.name || `Página ${index + 1}`,
+        layers: Array.isArray(page.layers) && page.layers.length ? page.layers : [{ id: `layer-${index + 1}`, name: 'Base', locked: false, visible: true }],
+        comps: deepClone(page.comps || []),
+        wires: deepClone(page.wires || []),
+      }))
+    : [{ id: 'page-1', name: 'Página 1', layers: [{ id: 'layer-1', name: 'Base', locked: false, visible: true }], comps: deepClone(base.comps || []), wires: deepClone(base.wires || []) }];
+
+  const activePageId = base.activePageId || base.active_page_id || pages[0]?.id || 'page-1';
+  const activePage = pages.find(page => page.id === activePageId) || pages[0];
+
   return {
-    comps: deepClone(data.comps || []),
-    wires: deepClone(data.wires || []),
-    viewMode: data.viewMode || payload?.viewMode || "3d",
+    pages,
+    activePageId: activePage.id,
+    comps: deepClone(activePage.comps || []),
+    wires: deepClone(activePage.wires || []),
+    viewMode: base.viewMode || rawData?.viewMode || fallbackViewMode,
+    favorites: Array.isArray(base.favorites) ? deepClone(base.favorites) : [],
+    templates: Array.isArray(base.templates) ? deepClone(base.templates) : [],
   };
+}
+
+function formatProjectPayload(payload) {
+  return normalizePages(payload, '3d');
 }
 
 function prettyDate(value) {
@@ -66,6 +87,10 @@ export function Engine({
   const [status, setStatusState] = useState("Selecione uma ferramenta e clique no canvas");
   const [wireColor, setWireColor] = useState("#38bdf8");
   const [loadingProjectId, setLoadingProjectId] = useState("");
+  const [pages, setPages] = useState([{ id:'page-1', name:'Página 1', layers:[{ id:'layer-1', name:'Base', locked:false, visible:true }], comps:[], wires:[] }]);
+  const [activePageId, setActivePageId] = useState('page-1');
+  const [projectVersions, setProjectVersions] = useState([]);
+  const [activeProjectId, setActiveProjectId] = useState(initialProject?.id || '');
 
   const setStatus = useCallback(message => {
     setStatusState(message);
@@ -76,6 +101,7 @@ export function Engine({
   const selComp = comps.find(component => component.id === sel);
   const selWire = wires.find(wire => wire.id === sel);
   const moduleMeta = MODS_ALL.find(item => item.id === modId);
+  const activePage = useMemo(() => pages.find(page => page.id === activePageId) || pages[0], [pages, activePageId]);
 
   const filteredLib = useMemo(() => {
     const query = paletteFilter.trim().toLowerCase();
@@ -86,6 +112,9 @@ export function Engine({
   const applyProjectState = useCallback((payload, label = "Projeto carregado") => {
     const formatted = formatProjectPayload(payload);
     dispatch({ type:"RESET", p:{ comps:formatted.comps, wires:formatted.wires } });
+    setPages(formatted.pages);
+    setActivePageId(formatted.activePageId);
+    setActiveProjectId(payload?.id || '');
     setViewMode(formatted.viewMode || "3d");
     setSd(null);
     setSel(null);
@@ -114,12 +143,20 @@ export function Engine({
       applyProjectState(initialProject, "Projeto inicial carregado");
     } else {
       dispatch({ type:"RESET", p:INIT });
+      setPages([{ id:'page-1', name:'Página 1', layers:[{ id:'layer-1', name:'Base', locked:false, visible:true }], comps:[], wires:[] }]);
+      setActivePageId('page-1');
+      setActiveProjectId('');
+      setProjectVersions([]);
       setSd(null);
       setSel(null);
       setRunning(false);
       setViewMode("3d");
     }
   }, [initialProjectKey, initialProject, applyProjectState]);
+
+  useEffect(() => {
+    setPages(current => current.map(page => page.id === activePageId ? { ...page, comps:deepClone(comps), wires:deepClone(wires) } : page));
+  }, [comps, wires, activePageId]);
 
   useEffect(() => {
     if (!running) {
@@ -406,14 +443,30 @@ export function Engine({
     setStatus("PNG exportado");
   }, [modId, viewMode, setStatus]);
 
+  const exportSVG = useCallback(() => {
+    const cv = cvRef.current;
+    if (!cv) return;
+    const pngData = cv.toDataURL('image/png');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cv.width}" height="${cv.height}" viewBox="0 0 ${cv.width} ${cv.height}"><rect width="100%" height="100%" fill="#020b14"/><image href="${pngData}" width="${cv.width}" height="${cv.height}"/></svg>`;
+    const blob = new Blob([svg], { type:'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `techsim_${modId}_${viewMode}_${Date.now()}.svg`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setStatus('SVG exportado');
+  }, [modId, viewMode, setStatus]);
+
   const saveJSON = useCallback(() => {
-    const data = JSON.stringify({ version:"3.0", modId, viewMode, comps, wires }, null, 2);
+    const savedPages = pages.map(page => page.id === activePageId ? { ...page, comps, wires } : page);
+    const data = JSON.stringify({ version:"4.0", modId, viewMode, activePageId, pages:savedPages }, null, 2);
     const anchor = document.createElement("a");
     anchor.href = `data:application/json;charset=utf-8,${encodeURIComponent(data)}`;
     anchor.download = `techsim_${modId}_${Date.now()}.json`;
     anchor.click();
     setStatus("JSON exportado");
-  }, [modId, viewMode, comps, wires, setStatus]);
+  }, [modId, viewMode, comps, wires, setStatus, pages, activePageId]);
 
   const loadJSON = useCallback(event => {
     const file = event.target.files?.[0];
@@ -462,23 +515,47 @@ export function Engine({
     if (!name) return;
     const summary = `${comps.length} componentes · ${wires.length} fios · ${viewMode.toUpperCase()}`;
     try {
-      await onSaveProject({
+      const saved = await onSaveProject({
+        id:activeProjectId || undefined,
         moduleId:modId,
         name,
         summary,
         viewMode,
-        data:{ comps, wires, viewMode },
+        data:{ pages:pages.map(page => page.id === activePageId ? { ...page, comps, wires } : page), activePageId, viewMode },
       });
+      if (saved?.id) setActiveProjectId(saved.id);
       setStatus("Projeto salvo na base local/API");
     } catch (error) {
       setStatus(`❌ ${error?.message || "Falha ao salvar o projeto"}`);
     }
-  }, [onSaveProject, moduleMeta?.label, modId, userName, comps, wires, viewMode, setStatus]);
+  }, [onSaveProject, moduleMeta?.label, modId, userName, comps, wires, viewMode, setStatus, activeProjectId, pages, activePageId]);
 
   const loadPreset = useCallback(preset => {
     if (!preset) return;
     applyProjectState(preset.project, `Preset carregado: ${preset.title}`);
   }, [applyProjectState]);
+
+  const switchPage = useCallback((pageId) => {
+    if (pageId === activePageId) return;
+    const target = pages.find(page => page.id === pageId);
+    if (!target) return;
+    setPages(current => current.map(page => page.id === activePageId ? { ...page, comps:deepClone(comps), wires:deepClone(wires) } : page));
+    setActivePageId(pageId);
+    dispatch({ type:'RESET', p:{ comps:deepClone(target.comps || []), wires:deepClone(target.wires || []) } });
+    setSel(null);
+    setSd(null);
+    setStatus(`Página ativa: ${target.name}`);
+  }, [pages, activePageId, comps, wires, setStatus]);
+
+  const addPage = useCallback(() => {
+    const nextId = `page-${Date.now()}`;
+    const nextPage = { id:nextId, name:`Página ${pages.length + 1}`, layers:[{ id:`layer-${pages.length + 1}`, name:'Base', locked:false, visible:true }], comps:[], wires:[] };
+    setPages(current => [...current.map(page => page.id === activePageId ? { ...page, comps:deepClone(comps), wires:deepClone(wires) } : page), nextPage]);
+    setActivePageId(nextId);
+    dispatch({ type:'RESET', p:INIT });
+    setSel(null);
+    setStatus('Nova página criada');
+  }, [pages.length, activePageId, comps, wires, setStatus]);
 
   const loadSavedProject = useCallback(async projectId => {
     if (!onLoadProject) return;
@@ -567,6 +644,14 @@ export function Engine({
         ))}
 
         <div style={{height:1, background:"#1e293b", margin:"2px 2px"}} />
+        <div style={{fontSize:7, color:"#1e3a5f", textAlign:"center", letterSpacing:2}}>PÁGINAS</div>
+        <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:4}}>
+          {pages.map(page => (
+            <button key={page.id} onClick={() => switchPage(page.id)} style={{background:page.id === activePageId ? `${modColor}18` : '#071020', border:`1px solid ${page.id === activePageId ? modColor : '#1e293b'}`, color:page.id === activePageId ? modColor : '#64748b', borderRadius:999, padding:'4px 8px', cursor:'pointer', fontSize:7, fontFamily:'inherit'}}>{page.name}</button>
+          ))}
+          <button onClick={addPage} style={{background:'#071020', border:'1px dashed #334155', color:'#94a3b8', borderRadius:999, padding:'4px 8px', cursor:'pointer', fontSize:7, fontFamily:'inherit'}}>+ Página</button>
+        </div>
+        <div style={{height:1, background:'#1e293b', margin:'2px 2px'}} />
         <div style={{fontSize:7, color:"#1e3a5f", textAlign:"center", letterSpacing:2}}>PRESETS</div>
         <div style={{display:"grid", gap:6}}>
           {modulePresets.map(preset => (
@@ -643,6 +728,7 @@ export function Engine({
           viewMode={viewMode}
           setViewMode={setViewMode}
           exportPNG={exportPNG}
+          exportSVG={exportSVG}
           duplicateSelected={duplicateSelected}
           fitView={fitView}
           saveProjectSnapshot={saveProjectSnapshot}
