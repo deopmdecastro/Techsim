@@ -17,12 +17,28 @@ createRealtimeServer(httpServer, env.corsOrigins);
 
 fs.mkdirSync(env.uploadDir, { recursive: true });
 
-app.use(helmet({ crossOriginResourcePolicy: false }));
-app.options('*', cors());
+const isLocalhostOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
+function resolveCorsOrigin(origin, callback) {
+  // Requests without an Origin header (curl, server-to-server, health checks) are always allowed.
+  if (!origin) return callback(null, true);
+
+  if (env.corsOrigins.includes(origin)) return callback(null, true);
+
+  // In development, be permissive about the *port* so local setups that run the
+  // frontend directly (vite on 5173) or behind nginx (8080) both work without
+  // needing to hand-tune CORS_ORIGIN every time.
+  if (env.nodeEnv !== 'production' && isLocalhostOrigin(origin)) {
+    return callback(null, true);
+  }
+
+  return callback(new Error(`Origin não permitida pelo CORS: ${origin}`));
+}
+
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(
   cors({
-    origin: (origin, callback) => callback(null, true),
+    origin: resolveCorsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })
