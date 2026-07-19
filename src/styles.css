@@ -150,3 +150,33 @@ button:active { transform: translateY(0); }
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Editor (canvas workspace) */
+.techsim-editor { --editor-track: #050e1a; }
+.editor-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #1e3a5f var(--editor-track);
+}
+.editor-scroll::-webkit-scrollbar { width: 7px; }
+.editor-scroll::-webkit-scrollbar-track { background: var(--editor-track); }
+.editor-scroll::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 999px; }
+.editor-scroll::-webkit-scrollbar-thumb:hover { background: #2d4a6b; }
+.editor-section-label {
+  border-top: 1px solid #132234;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.editor-empty-hint {
+  font-size: 7px;
+  color: #334155;
+  border: 1px dashed #1e293b;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  line-height: 1.6;
+}
+.editor-btn-hover {
+  transition: filter 140ms ease, transform 140ms ease;
+}
+.editor-btn-hover:hover:not(:disabled) { filter: brightness(1.18); }
+.editor-btn-hover:disabled { cursor: not-allowed; opacity: 0.5; }
