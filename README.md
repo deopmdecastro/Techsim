@@ -133,6 +133,27 @@ npm run dev
 
 ---
 
+## Contas de demonstração (seed)
+
+Para testar o login sem passar pelo registo, popula a base de dados com um utilizador normal e um admin:
+
+```bash
+# Com Docker: primeira subida do volume do Postgres já corre o seed automaticamente
+# (infra/postgres/init/002_seed.sql)
+
+# Em qualquer altura, com o backend a apontar para a BD certa:
+npm run backend:seed
+```
+
+| Papel | E-mail | Senha |
+|---|---|---|
+| Admin | `admin@techsim.dev` | `Admin@123` |
+| Utilizador | `user@techsim.dev` | `User@123` |
+
+O seed é idempotente (`ON CONFLICT ... DO UPDATE`), por isso pode ser corrido várias vezes sem duplicar contas. Usa apenas em desenvolvimento — nunca em produção.
+
+---
+
 ## Endpoints principais
 
 ### Auth
