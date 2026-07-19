@@ -4,15 +4,15 @@ const component = (t, lbl, sym, col, k, dv, u, tip, extra = {}) => ({ t, lbl, sy
 const preset = (id, title, description, project) => ({ id, title, description, project });
 
 export const MODS_ALL = [
-  { id: 'dc', icon: MODULE_GLYPHS.dc, label: 'Corrente Contínua', color: '#22d3ee', desc: 'Fontes, proteção, sinalização e motores DC' },
-  { id: 'ac', icon: MODULE_GLYPHS.ac, label: 'Corrente Alternada', color: '#f59e0b', desc: 'RLC, transformadores, proteção e medições' },
-  { id: 'cmd', icon: MODULE_GLYPHS.cmd, label: 'Comandos Elétricos', color: '#fb923c', desc: 'Botões, relés, contactores e motores' },
-  { id: 'pneum', icon: MODULE_GLYPHS.pneum, label: 'Pneumática', color: '#a78bfa', desc: 'Atuadores e válvulas pneumáticas industriais' },
-  { id: 'hidro', icon: MODULE_GLYPHS.hidro, label: 'Hidráulica', color: '#38bdf8', desc: 'Bombas, válvulas e atuadores hidráulicos' },
-  { id: 'plc', icon: 'PLC', label: 'PLC / Automação', color: '#c084fc', desc: 'CPUs, I/O, fieldbus e ladder industrial' },
-  { id: 'logic', icon: MODULE_GLYPHS.logic, label: 'Lógica Digital', color: '#4ade80', desc: 'Portas, entradas, flip-flops e análise booleana' },
-  { id: 'install', icon: MODULE_GLYPHS.install, label: 'Instalações', color: '#f43f5e', desc: 'Quadros, DR, DPS, tomadas e cargas' },
-  { id: 'ladder', icon: MODULE_GLYPHS.ladder, label: 'Ladder / CLP', color: '#8b5cf6', desc: 'Contatos, bobinas, timers e contadores' },
+  { id: 'dc', icon: MODULE_GLYPHS.dc, iconify: 'solar:battery-charge-linear', label: 'Corrente Contínua', color: '#22d3ee', desc: 'Fontes, proteção, sinalização e motores DC', wiki: 'https://pt.wikipedia.org/wiki/Corrente_cont%C3%ADnua' },
+  { id: 'ac', icon: MODULE_GLYPHS.ac, iconify: 'solar:bolt-circle-linear', label: 'Corrente Alternada', color: '#f59e0b', desc: 'RLC, transformadores, proteção e medições', wiki: 'https://pt.wikipedia.org/wiki/Corrente_alternada' },
+  { id: 'cmd', icon: MODULE_GLYPHS.cmd, iconify: 'solar:server-path-linear', label: 'Comandos Elétricos', color: '#fb923c', desc: 'Botões, relés, contactores e motores', wiki: 'https://pt.wikipedia.org/wiki/Comando_el%C3%A9trico' },
+  { id: 'pneum', icon: MODULE_GLYPHS.pneum, iconify: 'solar:airbuds-case-open-linear', label: 'Pneumática', color: '#a78bfa', desc: 'Atuadores e válvulas pneumáticas industriais', wiki: 'https://pt.wikipedia.org/wiki/Pneum%C3%A1tica' },
+  { id: 'hidro', icon: MODULE_GLYPHS.hidro, iconify: 'solar:drop-linear', label: 'Hidráulica', color: '#38bdf8', desc: 'Bombas, válvulas e atuadores hidráulicos', wiki: 'https://pt.wikipedia.org/wiki/Hidr%C3%A1ulica' },
+  { id: 'plc', icon: 'PLC', iconify: 'solar:cpu-bolt-linear', label: 'PLC / Automação', color: '#c084fc', desc: 'CPUs, I/O, fieldbus e ladder industrial', wiki: 'https://pt.wikipedia.org/wiki/Controlador_l%C3%B3gico_program%C3%A1vel' },
+  { id: 'logic', icon: MODULE_GLYPHS.logic, iconify: 'solar:code-square-linear', label: 'Lógica Digital', color: '#4ade80', desc: 'Portas, entradas, flip-flops e análise booleana', wiki: 'https://pt.wikipedia.org/wiki/L%C3%B3gica_digital' },
+  { id: 'install', icon: MODULE_GLYPHS.install, iconify: 'solar:home-wifi-angle-linear', label: 'Instalações', color: '#f43f5e', desc: 'Quadros, DR, DPS, tomadas e cargas', wiki: 'https://pt.wikipedia.org/wiki/Instala%C3%A7%C3%A3o_el%C3%A9trica' },
+  { id: 'ladder', icon: MODULE_GLYPHS.ladder, iconify: 'solar:siderbar-linear', label: 'Ladder / CLP', color: '#8b5cf6', desc: 'Contatos, bobinas, timers e contadores', wiki: 'https://pt.wikipedia.org/wiki/Ladder_logic' },
 ];
 
 export const LIBS = {

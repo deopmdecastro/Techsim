@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { hexToRgba, shiftHex } from "../constants";
 import { MODS_ALL } from "../data/modules";
+import { AppIcon } from './ui/AppIcon';
 
 const MODULES = MODS_ALL.map(module => ({
   ...module,
@@ -39,6 +40,12 @@ function ModuleCard({ module, presetCount, projectCount, onOpenModule, onOpenPre
       <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
         <button onClick={() => onOpenModule(module.id)} style={{background:`linear-gradient(135deg, ${module.color}, ${shiftHex(module.color, -0.12)})`, color:"#020b14", border:"none", padding:"10px 14px", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:10, letterSpacing:1.2, fontFamily:"inherit"}}>ABRIR EDITOR</button>
         <button onClick={() => onOpenPreset(module.id)} style={{background:"var(--bg)", color:module.color, border:`1px solid ${hexToRgba(module.color, 0.34)}`, padding:"10px 14px", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:10, letterSpacing:1.2, fontFamily:"inherit"}}>ABRIR PRESET</button>
+        {module.wiki && (
+          <a href={module.wiki} target="_blank" rel="noreferrer" style={{display:'inline-flex', alignItems:'center', gap:6, background:'var(--bg)', color:'var(--text-soft)', border:'1px solid var(--surface-border)', padding:'10px 14px', borderRadius:10, fontWeight:700, cursor:'pointer', fontSize:10, letterSpacing:1.2, fontFamily:'inherit'}}>
+            <AppIcon name="wiki" className="h-4 w-4" />
+            WIKIPEDIA
+          </a>
+        )}
       </div>
     </div>
   );
