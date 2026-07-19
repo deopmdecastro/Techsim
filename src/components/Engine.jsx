@@ -8,6 +8,7 @@ import { drawComp, drawGrid, drawWire } from '../canvas/shapes';
 import { PropertiesPanel } from './PropertiesPanel';
 import { Toolbar } from './Toolbar';
 import { AppIcon } from './ui/AppIcon';
+import SymbolIcon from './SymbolIcon';
 import { publishEditorPresence, publishEditorSelection, publishEditorSnapshot, publishSimulationState, subscribeToProject } from '../services/realtime';
 
 const deepClone = value => JSON.parse(JSON.stringify(value));
@@ -572,7 +573,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
                     <div className="text-sm font-medium" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</div>
                     <div className="mt-1 text-xs text-slate-500">{item.tip || item.k}</div>
                   </div>
-                  <span className="mono text-sm font-semibold" style={{ color: item.col }}>{item.sym}</span>
+                  <SymbolIcon item={item} size={22} />
                 </button>
               );
             }) : <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/50 px-4 py-5 text-sm leading-6 text-slate-500">Nenhum componente corresponde à busca.</div>}
@@ -728,7 +729,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
                     className={`flex min-w-[100px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border px-4 py-3 transition ${active ? 'bg-white/10 shadow-[0_0_18px_rgba(255,255,255,0.06)]' : 'bg-slate-950/50 hover:border-white/15'}`}
                     style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
                   >
-                    <span className="mono text-base font-bold" style={{ color: item.col || modColor }}>{item.sym}</span>
+                    <SymbolIcon item={item} size={26} />
                     <span className="text-xs font-semibold" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</span>
                     {item.tip && <span className="text-[10px] text-slate-500">{item.tip}</span>}
                   </button>

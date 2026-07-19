@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MODULE_GLYPHS } from '../constants';
+import { SymbolsAdminPanel } from './SymbolsAdminPanel';
 
 export function AdminDashboard({user,onBack}){
   const[activeTab,setATab]=useState("overview");
@@ -108,7 +109,7 @@ export function AdminDashboard({user,onBack}){
 
         {/* TABS */}
         <div style={{display:"flex",gap:2,marginBottom:24,borderBottom:"1px solid var(--border)"}}>
-          {[["overview","VISÃO GERAL"],["users","USUÁRIOS"],["modules","MÓDULOS"],["system","SISTEMA"],["logs","LOGS"]].map(([t,l])=>(
+          {[["overview","VISÃO GERAL"],["users","USUÁRIOS"],["modules","MÓDULOS"],["symbols","SÍMBOLOS"],["system","SISTEMA"],["logs","LOGS"]].map(([t,l])=>(
             <button key={t} onClick={()=>setATab(t)} style={T("#f43f5e",t)}>{l}</button>
           ))}
         </div>
@@ -312,6 +313,9 @@ export function AdminDashboard({user,onBack}){
             </div>
           </div>
         )}
+
+        {/* ── SYMBOLS TAB ─────────────────── */}
+        {activeTab==="symbols"&&<SymbolsAdminPanel/>}
 
         {/* ── SYSTEM TAB ──────────────────── */}
         {activeTab==="system"&&(
