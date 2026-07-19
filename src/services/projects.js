@@ -20,8 +20,13 @@ function writeProjects(items) {
 function normalizePayload(record = {}) {
   const data = record.data || record.payload || record;
   const pages = Array.isArray(data.pages) && data.pages.length
-    ? data.pages
-    : [{ id: 'page-1', name: 'Página 1', layers: [{ id: 'layer-1', name: 'Base', locked: false, visible: true }], comps: data.comps || [], wires: data.wires || [] }];
+    ? data.pages.map((page, index) => ({
+        ...page,
+        layers: Array.isArray(page.layers) && page.layers.length ? page.layers : [{ id: `layer-${index + 1}`, name: 'Base', locked: false, visible: true }],
+        currentLayerId: page.currentLayerId || page.layers?.[0]?.id || `layer-${index + 1}`,
+        groups: Array.isArray(page.groups) ? page.groups : [],
+      }))
+    : [{ id: 'page-1', name: 'Página 1', layers: [{ id: 'layer-1', name: 'Base', locked: false, visible: true }], currentLayerId: 'layer-1', groups: [], comps: data.comps || [], wires: data.wires || [] }];
 
   return {
     pages,

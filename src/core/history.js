@@ -2,6 +2,10 @@ export function hRed(st, a) {
   switch (a.type) {
     case 'PUSH':
       return { past: [...st.past, st.present], present: a.p, future: [] };
+    case 'SET':
+      return { ...st, present: a.p };
+    case 'COMMIT':
+      return { past: [...st.past, a.from], present: st.present, future: [] };
     case 'UNDO':
       return st.past.length === 0
         ? st

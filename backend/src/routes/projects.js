@@ -28,10 +28,12 @@ function normalizePayload(payload = {}, fallbackViewMode = '3d') {
         id: page.id || `page-${index + 1}`,
         name: page.name || `Página ${index + 1}`,
         layers: Array.isArray(page.layers) && page.layers.length ? page.layers : [{ id: `layer-${index + 1}`, name: 'Base', locked: false, visible: true }],
+        currentLayerId: page.currentLayerId || page.layers?.[0]?.id || `layer-${index + 1}`,
+        groups: Array.isArray(page.groups) ? page.groups : [],
         comps: Array.isArray(page.comps) ? page.comps : [],
         wires: Array.isArray(page.wires) ? page.wires : [],
       }))
-    : [{ id: 'page-1', name: 'Página 1', layers: [{ id: 'layer-1', name: 'Base', locked: false, visible: true }], comps: payload.comps || [], wires: payload.wires || [] }];
+    : [{ id: 'page-1', name: 'Página 1', layers: [{ id: 'layer-1', name: 'Base', locked: false, visible: true }], currentLayerId: 'layer-1', groups: [], comps: payload.comps || [], wires: payload.wires || [] }];
 
   return {
     pages,

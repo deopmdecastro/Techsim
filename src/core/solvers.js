@@ -1,18 +1,109 @@
+import { analyzeConnectivity } from './topology';
+import { simulatePlcScan } from './plcRuntime';
+
 export function solve(modId, comps, wires) {
   const h = { T:t=>({text:t,type:"title"}), F:f=>({text:f,type:"formula"}), R:r=>({text:r,type:"result"}), P:p=>({text:p,type:"sub"}), D:{text:"",type:"divider"} };
   try {
+    let base;
     switch(modId) {
-      case "dc":      return solveDC(comps,wires,h);
-      case "ac":      return solveAC(comps,wires,h);
-      case "pneum":   return solvePneum(comps,wires,h);
-      case "hidro":   return solveHidro(comps,wires,h);
-      case "logic":   return solveLogic(comps,wires,h);
-      case "cmd":     return solveCmd(comps,wires,h);
-      case "install": return solveInstall(comps,wires,h);
-      case "ladder":  return solveLadder(comps,wires,h);
-      default: return {steps:[],results:[],ok:false};
+      case "dc":      base = solveDC(comps,wires,h); break;
+      case "ac":      base = solveAC(comps,wires,h); break;
+      case "pneum":   base = solvePneum(comps,wires,h); break;
+      case "hidro":   base = solveHidro(comps,wires,h); break;
+      case "logic":   base = solveLogic(comps,wires,h); break;
+      case "cmd":     base = solveCmd(comps,wires,h); break;
+      case "install": base = solveInstall(comps,wires,h); break;
+      case "ladder":  base = solveLadder(comps,wires,h); break;
+      case "plc":     base = solvePlc(comps,wires,h); break;
+      default: base = {steps:[],results:[],ok:false};
     }
+    return finalizeSolution(modId, comps, wires, base, h);
   } catch(e) { return {steps:[{text:"❌ "+e.message,type:"result"}],results:[],ok:false}; }
+}
+
+function finalizeSolution(modId, comps, wires, base, { T, R, P, D }) {
+  const validation = analyzeConnectivity(modId, comps, wires);
+  const severityRank = { error: 2, warning: 1, info: 0 };
+  const worstSeverity = validation.diagnostics.reduce((level, item) => Math.max(level, severityRank[item.severity] ?? 0), 0);
+  const steps = [...(base.steps || [])];
+  const results = [...(base.results || [])];
+  const liveByComp = { ...(base.live?.byComp || {}) };
+
+  validation.energizedCompIds.forEach(id => {
+    liveByComp[id] = { ...(liveByComp[id] || {}), energized: true };
+  });
+
+  steps.push(D);
+  steps.push(T('🔎 Validação inteligente'));
+  steps.push(P(`Malhas:${validation.summary.islands} | Energizados:${validation.summary.energizedComponents} comps / ${validation.summary.energizedWires} fios`));
+  steps.push(P(`Órfãos:${validation.summary.orphanComponents} | Pontas abertas:${validation.summary.openWires}`));
+  if (validation.diagnostics.length) {
+    validation.diagnostics.slice(0, 6).forEach(item => steps.push(R(`${item.severity === 'error' ? '❌' : '⚠️'} ${item.message}`)));
+  } else {
+    steps.push(R('✅ Nenhuma inconsistência estrutural relevante foi detetada.'));
+  }
+
+  results.push({ label:'Malhas', value:String(validation.summary.islands), icon:'🧩', col:'#94a3b8' });
+  results.push({ label:'Energizados', value:String(validation.summary.energizedComponents), icon:'⚡', col:'#22c55e' });
+  if (validation.summary.openWires) results.push({ label:'Pontas abertas', value:String(validation.summary.openWires), icon:'⚠️', col:'#f87171' });
+  if (validation.summary.orphanComponents) results.push({ label:'Órfãos', value:String(validation.summary.orphanComponents), icon:'🧱', col:'#f59e0b' });
+
+  return {
+    ...base,
+    ok: Boolean(base.ok) && worstSeverity < 2,
+    steps,
+    results,
+    validation,
+    live: {
+      ...(base.live || {}),
+      byComp: liveByComp,
+      energizedWireIds: [...validation.energizedWireIds],
+    },
+  };
+}
+
+function solvePlc(comps,wires,{T,F,R,P,D}){
+  const runtime = simulatePlcScan(comps);
+  const st = [];
+  const re = [];
+  st.push(T('🧠 PLC RUNTIME'));
+  st.push(P(`CPUs:${runtime.summary.cpuCount} | Módulos I/O:${runtime.summary.ioCount} | Tags:${runtime.summary.addressedCount}`));
+  st.push(D);
+  st.push(T('Scan cycle'));
+  st.push(F('scan = base CPU + peso do programa + overhead de I/O'));
+  st.push(R(`Scan estimado = ${runtime.scanCycleMs.toFixed(2)} ms | CPU load ≈ ${runtime.cpuLoadPct.toFixed(1)}%`));
+  st.push(D);
+  st.push(T('Capacidade / uso'));
+  st.push(P(`DI ${runtime.usage.I}/${runtime.capacity.I || 0} · DO ${runtime.usage.Q}/${runtime.capacity.Q || 0} · AI ${runtime.usage.AI}/${runtime.capacity.AI || 0} · AO ${runtime.usage.AQ}/${runtime.capacity.AQ || 0}`));
+  if (runtime.outputs.length) {
+    st.push(D);
+    st.push(T('Saídas monitoradas'));
+    runtime.outputs.slice(0, 8).forEach(output => st.push(P(`${output.addr} → ${output.name} = ${output.value}`)));
+  }
+  if (runtime.memoryMap.length) {
+    st.push(D);
+    st.push(T('Mapa de endereços'));
+    runtime.memoryMap.slice(0, 10).forEach(item => st.push(P(`${item.addr} · ${item.name} (${item.type})`)));
+  }
+  if (runtime.diagnostics.length) {
+    st.push(D);
+    st.push(T('Diagnóstico do runtime'));
+    runtime.diagnostics.forEach(item => st.push(R(`${item.severity === 'error' ? '❌' : '⚠️'} ${item.message}`)));
+  }
+  re.push({ label:'Scan cycle', value:`${runtime.scanCycleMs.toFixed(2)} ms`, icon:'⏱', col:'#22d3ee' });
+  re.push({ label:'CPU load', value:`${runtime.cpuLoadPct.toFixed(1)}%`, icon:'🧠', col:'#a78bfa' });
+  re.push({ label:'Tags válidas', value:String(runtime.summary.addressedCount), icon:'#', col:'#4ade80' });
+  if (runtime.summary.duplicateCount) re.push({ label:'Duplicados', value:String(runtime.summary.duplicateCount), icon:'⚠️', col:'#f87171' });
+  if (runtime.summary.invalidCount) re.push({ label:'Inválidos', value:String(runtime.summary.invalidCount), icon:'🚫', col:'#f59e0b' });
+  return {
+    steps: st,
+    results: re,
+    ok: runtime.diagnostics.every(item => item.severity !== 'error'),
+    live: {
+      plc: runtime,
+      byComp: runtime.outputs.reduce((acc, output) => ({ ...acc, [output.componentId]: { energized: Boolean(output.value) } }), {}),
+    },
+  };
 }
 
 function solveDC(comps,wires,{T,F,R,P,D}){
