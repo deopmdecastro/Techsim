@@ -29,6 +29,12 @@ Techsim foi modernizado para uma base full-stack preparada para crescer como uma
   - exportação JSON e PNG
 - Biblioteca expandida para componentes industriais reais
 
+### Biblioteca de símbolos
+Componentes com símbolo SVG real (biblioteca `electronic-symbols`, MIT) aparecem
+com o desenho padronizado no lugar do glifo de texto. Mais símbolos, incluindo do
+QElectroTech (CC-BY 3.0) e do Wikimedia Commons, podem ser adicionados sem código
+via **Admin → Símbolos**. Ver [CREDITS.md](./CREDITS.md) para detalhes de licença.
+
 ### Simulação e bibliotecas
 Foram expandidas as bibliotecas para cobrir melhor cenários de:
 - potência DC
