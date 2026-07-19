@@ -15,7 +15,7 @@ function SmallButton({ children, onClick, tone = 'default', wide = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border px-3 py-2 text-sm font-medium transition ${wide ? 'w-full justify-center' : ''} inline-flex items-center justify-center gap-2 ${tones[tone] || tones.default}`}
+      className={`rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-150 active:scale-[0.96] ${wide ? 'w-full justify-center' : ''} inline-flex items-center justify-center gap-2 ${tones[tone] || tones.default}`}
     >
       {children}
     </button>
@@ -31,7 +31,7 @@ function Field({ label, children }) {
   );
 }
 
-const inputClass = 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-violet-400/40';
+const inputClass = 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-100 outline-none transition-all duration-150 focus:border-violet-400/50 focus:bg-slate-950/90 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.12)]';
 
 export function PropertiesPanel({ comp, lib, modColor, comps, wires, push, setSel, sd, onCalc, onToggleSim, running }) {
   const [editVal, setEditVal] = useState('');
@@ -56,16 +56,17 @@ export function PropertiesPanel({ comp, lib, modColor, comps, wires, push, setSe
   if (!comp && !sd) {
     return (
       <div className="editor-scroll flex flex-1 flex-col items-center justify-center gap-5 px-6 py-10 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-violet-500/10 text-violet-200">
-          <AppIcon name="component" className="h-10 w-10" />
+        <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-violet-500/10 text-violet-200">
+          <div className="absolute inset-0 rounded-3xl bg-violet-500/10 blur-xl" aria-hidden="true" />
+          <AppIcon name="component" className="relative h-10 w-10" />
         </div>
         <div className="space-y-2">
           <div className="text-lg font-semibold text-slate-100">Selecione um componente</div>
-          <div className="max-w-[220px] text-sm leading-7 text-slate-500">
+          <div className="max-w-[240px] text-sm leading-7 text-slate-500">
             Clique em um item do canvas para editar propriedades, endereços e comportamento de simulação.
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-400">
+        <div className="inline-flex items-center rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-400">
           <span className="mr-2 text-slate-500">Atalho</span>
           <kbd className="rounded-lg border border-violet-400/25 bg-violet-500/10 px-2 py-1 font-mono text-xs text-violet-200">F9</kbd>
           <span className="ml-2">para calcular</span>
@@ -85,13 +86,20 @@ export function PropertiesPanel({ comp, lib, modColor, comps, wires, push, setSe
                 <div className="mt-1 text-lg font-semibold" style={{ color: modColor }}>{comp.n || comp.t}</div>
                 <div className="mt-1 text-sm text-slate-400">{li?.lbl || comp.t} {li?.tip ? `— ${li.tip}` : ''}</div>
               </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/70 text-slate-200">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-slate-100"
+                style={{
+                  borderColor: `${modColor}40`,
+                  background: `linear-gradient(135deg, ${modColor}26, rgba(15,18,32,0.4))`,
+                  boxShadow: `0 0 20px ${modColor}1f`,
+                }}
+              >
                 <span className="mono text-sm font-semibold">{li?.sym || 'IO'}</span>
               </div>
             </div>
 
             {comp.t === 'mtr' && (
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2 border-t border-white/6 pt-3">
                 {['V', 'mA', 'Ω', 'AC'].map((m, i) => (
                   <SmallButton
                     key={m}
@@ -165,10 +173,12 @@ export function PropertiesPanel({ comp, lib, modColor, comps, wires, push, setSe
                       key={cc || 'default'}
                       type="button"
                       onClick={() => { setEditColor(cc); push({ comps: comps.map(c => c.id === comp.id ? { ...c, color: cc || undefined } : c), wires }); }}
-                      className={`h-8 w-8 rounded-full border-2 transition ${selected ? 'border-white scale-105' : 'border-slate-700'}`}
+                      className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 text-[10px] font-bold text-black/70 transition-all duration-150 hover:scale-110 ${selected ? 'scale-110 border-white shadow-[0_0_0_2px_rgba(255,255,255,0.15)]' : 'border-slate-700'}`}
                       style={{ background: cc || '#1f2937' }}
                       aria-label={`Selecionar cor ${cc || 'padrão'}`}
-                    />
+                    >
+                      {selected && '✓'}
+                    </button>
                   );
                 })}
               </div>
@@ -209,12 +219,27 @@ export function PropertiesPanel({ comp, lib, modColor, comps, wires, push, setSe
               </div>
             </div>
             <div className="space-y-2">
-              {sd.results.map((r, i) => (
-                <div key={i} className="flex items-center justify-between rounded-2xl border border-white/6 bg-slate-950/60 px-4 py-3" style={{ borderLeftColor: r.col || modColor, borderLeftWidth: 3 }}>
-                  <span className="text-sm text-slate-400">{r.icon} {r.label}</span>
-                  <span className="mono text-sm font-semibold" style={{ color: r.col || modColor }}>{r.value}</span>
-                </div>
-              ))}
+              {sd.results.map((r, i) => {
+                const rowColor = r.col || modColor;
+                return (
+                  <div
+                    key={i}
+                    className="group flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-slate-950/60 px-3 py-2.5 transition-all duration-150 hover:border-white/12 hover:bg-slate-950/80"
+                    style={{ borderLeftColor: rowColor, borderLeftWidth: 3 }}
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm transition-transform duration-150 group-hover:scale-105"
+                        style={{ background: `${rowColor}1f`, color: rowColor }}
+                      >
+                        {r.icon}
+                      </span>
+                      <span className="truncate text-sm text-slate-400">{r.label}</span>
+                    </div>
+                    <span className="mono shrink-0 text-sm font-semibold" style={{ color: rowColor }}>{r.value}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -236,7 +261,7 @@ export function PropertiesPanel({ comp, lib, modColor, comps, wires, push, setSe
                 </a>
               )}
             </div>
-            <div className="rounded-2xl border border-white/6 bg-[#080b14] p-4 mono text-xs leading-6 text-slate-400">
+            <div className="rounded-2xl border border-white/6 bg-[#080b14] p-4 mono text-xs leading-6 text-slate-400 shadow-[inset_0_2px_12px_rgba(0,0,0,0.25)]">
               {sd.steps.map((s, i) => (
                 s.type === 'divider'
                   ? <div key={i} className="my-2 h-px bg-white/8" />

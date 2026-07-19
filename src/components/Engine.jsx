@@ -404,7 +404,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
                 key={button.t}
                 type="button"
                 onClick={() => setTool(button.t)}
-                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-150 active:scale-[0.98] ${
                   active
                     ? 'border-violet-400/60 bg-violet-500/18 text-violet-100 shadow-[0_0_22px_rgba(139,92,246,0.18)]'
                     : 'border-white/8 bg-slate-950/60 text-slate-300 hover:border-white/15 hover:text-white'
@@ -552,7 +552,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
               value={paletteFilter}
               onChange={event => setPaletteFilter(event.target.value)}
               placeholder="Buscar componente (atalho: /)"
-              className="w-full rounded-2xl border border-white/8 bg-slate-950/70 py-3 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-violet-400/40"
+              className="w-full rounded-2xl border border-white/8 bg-slate-950/70 py-3 pl-10 pr-4 text-sm text-slate-100 outline-none transition-all duration-150 focus:border-violet-400/50 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.12)]"
             />
           </div>
           <div className="space-y-2">
@@ -565,7 +565,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
                   draggable
                   onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
                   onClick={() => setTool(item.t)}
-                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${active ? 'bg-white/8 shadow-[0_0_18px_rgba(255,255,255,0.04)]' : 'bg-slate-950/60 hover:border-white/15'} `}
+                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.98] ${active ? 'bg-white/8 shadow-[0_0_18px_rgba(255,255,255,0.04)]' : 'bg-slate-950/60 hover:border-white/15 hover:bg-slate-950/80'} `}
                   style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
                 >
                   <div>
