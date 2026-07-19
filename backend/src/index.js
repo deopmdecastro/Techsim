@@ -18,7 +18,15 @@ createRealtimeServer(httpServer, env.corsOrigins);
 fs.mkdirSync(env.uploadDir, { recursive: true });
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(cors({ origin: env.corsOrigins, credentials: true }));
+app.options('*', cors());
+
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, true),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  })
+);
 app.use(express.json({ limit: '8mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
