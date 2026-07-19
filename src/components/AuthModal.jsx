@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
 
+// Contas de demonstração criadas pelo seed (backend/src/db/seed.js).
+// Só aparecem em build de desenvolvimento — nunca em produção.
+const DEMO_ACCOUNTS = [
+  { role: "user", label: "Utilizador", email: "user@techsim.dev", password: "User@123", color: "#22d3ee" },
+  { role: "admin", label: "Admin", email: "admin@techsim.dev", password: "Admin@123", color: "#f43f5e" },
+];
+const SHOW_DEMO_ACCOUNTS = import.meta.env.DEV;
+
 export function AuthModal({ mode, onClose, onSubmit }) {
   const [tab, setTab] = useState(mode || "login");
   const [form, setForm] = useState({ name:"", email:"", password:"" });
@@ -27,6 +35,11 @@ export function AuthModal({ mode, onClose, onSubmit }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fillDemoAccount = account => {
+    setForm(current => ({ ...current, email: account.email, password: account.password }));
+    setError("");
   };
 
   const inputStyle = {
@@ -62,6 +75,36 @@ export function AuthModal({ mode, onClose, onSubmit }) {
             <button key={item.id} onClick={() => setTab(item.id)} style={{flex:1, border:"none", borderRadius:8, padding:"10px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:10, fontWeight:700, letterSpacing:1.8, background:tab === item.id ? "#22d3ee" : "transparent", color:tab === item.id ? "#020b14" : "#64748b"}}>{item.label}</button>
           ))}
         </div>
+
+        {tab === "login" && SHOW_DEMO_ACCOUNTS && (
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:8, color:"#475569", letterSpacing:2, marginBottom:8}}>PREENCHER COM CONTA DE TESTE</div>
+            <div style={{display:"flex", gap:8}}>
+              {DEMO_ACCOUNTS.map(account => (
+                <button
+                  key={account.role}
+                  type="button"
+                  onClick={() => fillDemoAccount(account)}
+                  style={{
+                    flex:1,
+                    background:`${account.color}18`,
+                    border:`1px solid ${account.color}55`,
+                    color:account.color,
+                    padding:"9px 10px",
+                    borderRadius:8,
+                    cursor:"pointer",
+                    fontFamily:"inherit",
+                    fontSize:9,
+                    fontWeight:700,
+                    letterSpacing:1.2,
+                  }}
+                >
+                  {account.label === "Admin" ? "🛡️" : "👤"} {account.label.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <div style={{background:"#2a0910", border:"1px solid #f43f5e44", color:"#fda4af", borderRadius:10, padding:"10px 12px", fontSize:10, marginBottom:14}}>{error}</div>}
 
