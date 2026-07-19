@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { LIBS, MODS_ALL, MODULE_PRESETS } from '../../../src/data/modules.js';
+import { LIBS, MODS_ALL, MODULE_PRESETS } from '../data/modules.js';
 import { cacheJson, readCachedJson } from '../services/cache.js';
+
 
 const router = Router();
 const CACHE_KEY = 'libraries:v1';
