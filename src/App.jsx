@@ -70,8 +70,8 @@ function WorkspaceHeader({ activeModule, openBlankModule, moduleOptions, theme, 
           <AppIcon icon={moduleMeta?.iconify} className="h-6 w-6" />
         </div>
         <div>
-          <div className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-slate-500">Techsim Platform</div>
-          <div className="text-lg font-semibold text-slate-100">Workspace industrial em tempo real</div>
+          <div className="eyebrow">Techsim Platform</div>
+          <div className="font-display text-lg font-semibold text-slate-100">Workspace industrial em tempo real</div>
         </div>
       </div>
 
@@ -246,8 +246,8 @@ export default function App() {
                 <AppIcon name="module" className="h-6 w-6" />
               </div>
               <div>
-                <div className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-slate-500">Techsim Platform</div>
-                <div className="text-lg font-semibold text-slate-100">Docker, API, colaboração e simulação industrial</div>
+                <div className="eyebrow">Techsim Platform</div>
+                <div className="font-display text-lg font-semibold text-slate-100">Docker, API, colaboração e simulação industrial</div>
               </div>
             </div>
             <div className="flex items-center gap-3">

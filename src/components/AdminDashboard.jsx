@@ -44,24 +44,24 @@ export function AdminDashboard({user,onBack}){
     {t:"00:48",type:"INFO",msg:"Novo usuário EDU: prof.joao@ufmg.br"},
     {t:"00:12",type:"ERROR",msg:"Timeout simulação #4421 (user: carlos@eng.br)"},
   ];
-  const planDist=[{plan:"FREE",n:89,col:"#334155"},{plan:"EDU",n:31,col:"#4ade80"},{plan:"PRO",n:22,col:"#22d3ee"}];
+  const planDist=[{plan:"FREE",n:89,col:"var(--text-dim)"},{plan:"EDU",n:31,col:"#4ade80"},{plan:"PRO",n:22,col:"#22d3ee"}];
   const planTotal=planDist.reduce((s,p)=>s+p.n,0);
 
   const grd=`repeating-linear-gradient(#22d3ee06 0,#22d3ee06 1px,transparent 1px,transparent 48px),repeating-linear-gradient(90deg,#22d3ee06 0,#22d3ee06 1px,transparent 1px,transparent 48px)`;
   const T=(t,b)=>({color:t,borderBottom:`2px solid ${activeTab===b?t:"transparent"}`,background:activeTab===b?t+"15":"transparent",padding:"8px 18px",cursor:"pointer",fontSize:9,letterSpacing:2,fontFamily:"inherit",fontWeight:700,border:`none`,borderRadius:"6px 6px 0 0",transition:"all 0.18s"});
   const statCard=(icon,label,val,unit,col,delta)=>(
-    <div style={{background:"#040d18",border:`1px solid ${col}33`,borderRadius:10,padding:"16px 18px",position:"relative",overflow:"hidden",flex:"1 1 0"}}>
+    <div style={{background:"var(--panel-2)",border:`1px solid ${col}33`,borderRadius:10,padding:"16px 18px",position:"relative",overflow:"hidden",flex:"1 1 0"}}>
       <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:`radial-gradient(${col}18,transparent 70%)`}}/>
       <div style={{fontSize:18,marginBottom:6}}>{icon}</div>
-      <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:4}}>{label}</div>
+      <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:4}}>{label}</div>
       <div style={{fontSize:22,fontWeight:700,color:col,fontFamily:"monospace"}}>{val}</div>
-      <div style={{fontSize:8,color:"#475569",marginTop:3}}>{unit}</div>
+      <div style={{fontSize:8,color:"var(--text-soft)",marginTop:3}}>{unit}</div>
       {delta&&<div style={{position:"absolute",top:14,right:14,fontSize:8,color:parseFloat(delta)>=0?"#22c55e":"#f87171",background:parseFloat(delta)>=0?"#22c55e18":"#f8717118",padding:"2px 6px",borderRadius:4}}>{parseFloat(delta)>=0?"↑":"↓"} {delta}</div>}
     </div>
   );
   const miniBar=(val,max,col)=>{
     const pct=Math.min(1,val/max);
-    return <div style={{height:3,borderRadius:2,background:"#0d1e2e",overflow:"hidden",marginTop:4}}>
+    return <div style={{height:3,borderRadius:2,background:"var(--surface-3)",overflow:"hidden",marginTop:4}}>
       <div style={{height:"100%",width:`${pct*100}%`,background:col,borderRadius:2,transition:"width 0.5s"}}/>
     </div>;
   };
@@ -83,15 +83,15 @@ export function AdminDashboard({user,onBack}){
   };
 
   return(
-    <div style={{minHeight:"100vh",background:"#020b14",fontFamily:"'Courier New',Consolas,monospace",color:"#e2e8f0",backgroundImage:grd}}>
+    <div style={{minHeight:"100vh",background:"var(--bg)",fontFamily:"var(--font-mono)",color:"var(--text)",backgroundImage:grd}}>
       {/* Top bar */}
-      <nav style={{position:"sticky",top:0,zIndex:100,height:56,background:"#010912ee",backdropFilter:"blur(14px)",borderBottom:"1px solid #1e3a5f44",display:"flex",alignItems:"center",padding:"0 28px",gap:14}}>
-        <button onClick={onBack} style={{background:"transparent",border:"1px solid #1e3a5f",color:"#475569",padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:9,letterSpacing:1.5,fontFamily:"inherit"}}>← USUÁRIO</button>
-        <div style={{width:1,height:24,background:"#1e3a5f"}}/>
+      <nav style={{position:"sticky",top:0,zIndex:100,height:56,background:"rgba(5,6,13,0.9)",backdropFilter:"blur(14px)",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",padding:"0 28px",gap:14}}>
+        <button onClick={onBack} style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text-soft)",padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:9,letterSpacing:1.5,fontFamily:"inherit"}}>← USUÁRIO</button>
+        <div style={{width:1,height:24,background:"var(--border)"}}/>
         <span style={{fontSize:14,color:"#f43f5e",filter:"drop-shadow(0 0 8px #f43f5e)"}}>🔐</span>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:"#f43f5e",letterSpacing:2.5}}>TECHSIM ADMIN</div>
-          <div style={{fontSize:7,color:"#334155",letterSpacing:3}}>PAINEL DE CONTROLE</div>
+          <div style={{fontSize:7,color:"var(--text-dim)",letterSpacing:3}}>PAINEL DE CONTROLE</div>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:12,alignItems:"center"}}>
           {/* Live indicator */}
@@ -100,14 +100,14 @@ export function AdminDashboard({user,onBack}){
             <span style={{fontSize:8,color:"#22c55e",letterSpacing:2}}>LIVE</span>
           </div>
           <div style={{width:30,height:30,borderRadius:6,background:"#f43f5e22",border:"1px solid #f43f5e44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>👤</div>
-          <div style={{fontSize:10,color:"#94a3b8"}}>{user?.name||"Admin"}</div>
+          <div style={{fontSize:10,color:"var(--text-soft)"}}>{user?.name||"Admin"}</div>
         </div>
       </nav>
 
       <div style={{padding:"24px 28px",maxWidth:1400,margin:"0 auto"}}>
 
         {/* TABS */}
-        <div style={{display:"flex",gap:2,marginBottom:24,borderBottom:"1px solid #1e3a5f"}}>
+        <div style={{display:"flex",gap:2,marginBottom:24,borderBottom:"1px solid var(--border)"}}>
           {[["overview","VISÃO GERAL"],["users","USUÁRIOS"],["modules","MÓDULOS"],["system","SISTEMA"],["logs","LOGS"]].map(([t,l])=>(
             <button key={t} onClick={()=>setATab(t)} style={T("#f43f5e",t)}>{l}</button>
           ))}
@@ -129,10 +129,10 @@ export function AdminDashboard({user,onBack}){
             {/* Charts row */}
             <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:14}}>
               {/* Simulations chart */}
-              <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"18px 20px"}}>
+              <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"18px 20px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
                   <div>
-                    <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:4}}>SIMULAÇÕES / HORA</div>
+                    <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:4}}>SIMULAÇÕES / HORA</div>
                     <div style={{fontSize:18,fontWeight:700,color:"#f59e0b"}}>{simHistory[simHistory.length-1]}</div>
                   </div>
                   <div style={{fontSize:8,color:"#4ade80",background:"#4ade8018",padding:"3px 8px",borderRadius:4,border:"1px solid #4ade8033"}}>▲ 14%</div>
@@ -140,25 +140,25 @@ export function AdminDashboard({user,onBack}){
                 <div style={{display:"flex",gap:6,alignItems:"flex-end",height:70}}>
                   {simHistory.map((v,i)=>(
                     <div key={i} style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"flex-end",height:"100%"}}>
-                      <div style={{background:i===simHistory.length-1?"#f59e0b":i>=simHistory.length-3?"#f59e0b66":"#1e3a5f",borderRadius:"3px 3px 0 0",height:`${(v/maxSim)*100}%`,transition:"height 0.5s"}}/>
+                      <div style={{background:i===simHistory.length-1?"#f59e0b":i>=simHistory.length-3?"#f59e0b66":"var(--border)",borderRadius:"3px 3px 0 0",height:`${(v/maxSim)*100}%`,transition:"height 0.5s"}}/>
                     </div>
                   ))}
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
                   {["12h","11h","10h","9h","8h","7h","6h","5h","4h","3h","2h","1h"].map(h=>(
-                    <div key={h} style={{fontSize:5,color:"#1e3a5f",flex:1,textAlign:"center"}}>{h}</div>
+                    <div key={h} style={{fontSize:5,color:"var(--border)",flex:1,textAlign:"center"}}>{h}</div>
                   ))}
                 </div>
               </div>
 
               {/* Active users module breakdown */}
-              <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"18px 20px"}}>
-                <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:12}}>POR MÓDULO</div>
+              <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"18px 20px"}}>
+                <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:12}}>POR MÓDULO</div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {modules.slice(0,5).map(m=>(
                     <div key={m.id}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                        <span style={{fontSize:8,color:"#94a3b8"}}>{m.icon} {m.label}</span>
+                        <span style={{fontSize:8,color:"var(--text-soft)"}}>{m.icon} {m.label}</span>
                         <span style={{fontSize:8,color:m.col}}>{m.sessions}</span>
                       </div>
                       {miniBar(m.sessions,totalSessions*0.55,m.col)}
@@ -168,8 +168,8 @@ export function AdminDashboard({user,onBack}){
               </div>
 
               {/* Plan distribution */}
-              <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"18px 20px"}}>
-                <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:12}}>PLANOS</div>
+              <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"18px 20px"}}>
+                <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:12}}>PLANOS</div>
                 <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
                   <svg width={100} height={100} viewBox="-50 -50 100 100">
                     {planDist.reduce((acc,p,i)=>{
@@ -182,8 +182,8 @@ export function AdminDashboard({user,onBack}){
                       acc.els.push(<path key={i} d={`M 0 0 L ${x1} ${y1} A 38 38 0 ${large} 1 ${x2} ${y2} Z`} fill={p.col} opacity="0.8"/>);
                       acc.start=endA;return acc;
                     },{start:0,els:[]}).els}
-                    <circle r={22} fill="#040d18"/>
-                    <text textAnchor="middle" dy="4" fontSize="9" fill="#e2e8f0" fontFamily="monospace" fontWeight="bold">{planTotal}</text>
+                    <circle r={22} fill="var(--panel-2)"/>
+                    <text textAnchor="middle" dy="4" fontSize="9" fill="var(--text)" fontFamily="monospace" fontWeight="bold">{planTotal}</text>
                   </svg>
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -191,7 +191,7 @@ export function AdminDashboard({user,onBack}){
                     <div key={p.plan} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div style={{display:"flex",alignItems:"center",gap:5}}>
                         <div style={{width:7,height:7,borderRadius:2,background:p.col}}/>
-                        <span style={{fontSize:9,color:"#94a3b8"}}>{p.plan}</span>
+                        <span style={{fontSize:9,color:"var(--text-soft)"}}>{p.plan}</span>
                       </div>
                       <span style={{fontSize:9,color:p.col,fontWeight:700}}>{p.n}</span>
                     </div>
@@ -203,20 +203,20 @@ export function AdminDashboard({user,onBack}){
             {/* User activity trend + system events */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
               {/* User trend */}
-              <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"18px 20px"}}>
-                <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:4}}>CRESCIMENTO DE USUÁRIOS</div>
+              <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"18px 20px"}}>
+                <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:4}}>CRESCIMENTO DE USUÁRIOS</div>
                 <div style={{fontSize:18,fontWeight:700,color:"#22d3ee",marginBottom:12}}>{userHistory[userHistory.length-1]} usuários</div>
                 {miniLineChart(userHistory,maxUser*1.1,"#22d3ee",60,300)}
               </div>
               {/* Recent events */}
-              <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"18px 20px"}}>
-                <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:12}}>EVENTOS RECENTES</div>
+              <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"18px 20px"}}>
+                <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:12}}>EVENTOS RECENTES</div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {systemEvents.map((e,i)=>(
                     <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"6px 8px",background:`${eventCol[e.type]}0a`,borderRadius:4,border:`1px solid ${eventCol[e.type]}22`}}>
                       <span style={{fontSize:8,color:eventCol[e.type],fontWeight:700,whiteSpace:"nowrap"}}>{e.t}</span>
                       <span style={{fontSize:7,background:eventCol[e.type]+"22",color:eventCol[e.type],padding:"1px 5px",borderRadius:3,letterSpacing:1,flexShrink:0}}>{e.type}</span>
-                      <span style={{fontSize:8,color:"#475569",lineHeight:1.4}}>{e.msg}</span>
+                      <span style={{fontSize:8,color:"var(--text-soft)",lineHeight:1.4}}>{e.msg}</span>
                     </div>
                   ))}
                 </div>
@@ -230,48 +230,48 @@ export function AdminDashboard({user,onBack}){
           <div>
             {/* Search / actions bar */}
             <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:20}}>
-              <input placeholder="🔍  Buscar usuário..." style={{flex:1,background:"#040d18",border:"1px solid #1e3a5f",color:"#94a3b8",padding:"10px 16px",borderRadius:6,fontSize:10,fontFamily:"inherit",outline:"none"}}/>
-              <select style={{background:"#040d18",border:"1px solid #1e3a5f",color:"#94a3b8",padding:"10px 14px",borderRadius:6,fontSize:10,fontFamily:"inherit"}}>
+              <input placeholder="🔍  Buscar usuário..." style={{flex:1,background:"var(--panel-2)",border:"1px solid var(--border)",color:"var(--text-soft)",padding:"10px 16px",borderRadius:6,fontSize:10,fontFamily:"inherit",outline:"none"}}/>
+              <select style={{background:"var(--panel-2)",border:"1px solid var(--border)",color:"var(--text-soft)",padding:"10px 14px",borderRadius:6,fontSize:10,fontFamily:"inherit"}}>
                 <option>Todos os planos</option><option>FREE</option><option>PRO</option><option>EDU</option>
               </select>
               <button style={{background:"linear-gradient(135deg,#f43f5e,#e11d48)",border:"none",color:"#fff",padding:"10px 20px",borderRadius:6,cursor:"pointer",fontSize:9,fontWeight:700,letterSpacing:1.5,fontFamily:"inherit"}}>+ NOVO USUÁRIO</button>
             </div>
             {/* Users table */}
-            <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,overflow:"hidden"}}>
-              <div style={{display:"grid",gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr",gap:0,borderBottom:"1px solid #1e3a5f",padding:"10px 18px"}}>
+            <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,overflow:"hidden"}}>
+              <div style={{display:"grid",gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr",gap:0,borderBottom:"1px solid var(--border)",padding:"10px 18px"}}>
                 {["USUÁRIO","E-MAIL","PLANO","MÓDULO ATIVO","ONLINE","AÇÕES"].map(h=>(
-                  <div key={h} style={{fontSize:7,color:"#334155",letterSpacing:2,fontWeight:700}}>{h}</div>
+                  <div key={h} style={{fontSize:7,color:"var(--text-dim)",letterSpacing:2,fontWeight:700}}>{h}</div>
                 ))}
               </div>
               {recentUsers.map((u,i)=>(
-                <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr",gap:0,borderBottom:"1px solid #0d1e2e",padding:"12px 18px",transition:"background 0.12s"}}
-                  onMouseEnter={e=>e.currentTarget.style.background="#071020"}
+                <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr",gap:0,borderBottom:"1px solid var(--surface-3)",padding:"12px 18px",transition:"background 0.12s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--surface)"}
                   onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
                     <div style={{width:26,height:26,borderRadius:6,background:"#f43f5e22",border:"1px solid #f43f5e44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#f43f5e",flexShrink:0}}>{u.name[0]}</div>
-                    <span style={{fontSize:10,color:"#94a3b8"}}>{u.name}</span>
+                    <span style={{fontSize:10,color:"var(--text-soft)"}}>{u.name}</span>
                   </div>
-                  <div style={{fontSize:9,color:"#475569",alignSelf:"center"}}>{u.email}</div>
+                  <div style={{fontSize:9,color:"var(--text-soft)",alignSelf:"center"}}>{u.email}</div>
                   <div style={{alignSelf:"center"}}>
-                    <span style={{fontSize:8,background:u.plan==="PRO"?"#22d3ee18":u.plan==="EDU"?"#4ade8018":"#33415518",color:u.plan==="PRO"?"#22d3ee":u.plan==="EDU"?"#4ade80":"#64748b",padding:"3px 8px",borderRadius:4,border:`1px solid ${u.plan==="PRO"?"#22d3ee33":u.plan==="EDU"?"#4ade8033":"#33415533"}`,letterSpacing:1}}>{u.plan}</span>
+                    <span style={{fontSize:8,background:u.plan==="PRO"?"#22d3ee18":u.plan==="EDU"?"#4ade8018":"rgba(148,163,184,0.14)",color:u.plan==="PRO"?"#22d3ee":u.plan==="EDU"?"#4ade80":"#94a3b8",padding:"3px 8px",borderRadius:4,border:`1px solid ${u.plan==="PRO"?"#22d3ee33":u.plan==="EDU"?"#4ade8033":"rgba(148,163,184,0.26)"}`,letterSpacing:1}}>{u.plan}</span>
                   </div>
-                  <div style={{fontSize:9,color:"#94a3b8",alignSelf:"center"}}>{u.mod}</div>
+                  <div style={{fontSize:9,color:"var(--text-soft)",alignSelf:"center"}}>{u.mod}</div>
                   <div style={{display:"flex",alignItems:"center",gap:4,alignSelf:"center"}}>
                     <div style={{width:5,height:5,borderRadius:"50%",background:"#22c55e"}}/>
                     <span style={{fontSize:8,color:"#22c55e"}}>{u.time} atrás</span>
                   </div>
                   <div style={{display:"flex",gap:6,alignSelf:"center"}}>
-                    <button style={{background:"transparent",border:"1px solid #1e3a5f",color:"#475569",padding:"3px 8px",borderRadius:3,cursor:"pointer",fontSize:8,fontFamily:"inherit"}}>Ver</button>
+                    <button style={{background:"transparent",border:"1px solid var(--border)",color:"var(--text-soft)",padding:"3px 8px",borderRadius:3,cursor:"pointer",fontSize:8,fontFamily:"inherit"}}>Ver</button>
                     <button style={{background:"transparent",border:"1px solid #f8717133",color:"#f87171",padding:"3px 8px",borderRadius:3,cursor:"pointer",fontSize:8,fontFamily:"inherit"}}>Ban</button>
                   </div>
                 </div>
               ))}
             </div>
             <div style={{marginTop:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{fontSize:8,color:"#334155"}}>Mostrando 6 de 142 usuários</span>
+              <span style={{fontSize:8,color:"var(--text-dim)"}}>Mostrando 6 de 142 usuários</span>
               <div style={{display:"flex",gap:4}}>
                 {[1,2,3,"...","24"].map((p,i)=>(
-                  <button key={i} style={{background:p===1?"#f43f5e22":"transparent",border:`1px solid ${p===1?"#f43f5e44":"#1e3a5f"}`,color:p===1?"#f43f5e":"#334155",width:26,height:26,borderRadius:4,cursor:"pointer",fontSize:8,fontFamily:"inherit"}}>{p}</button>
+                  <button key={i} style={{background:p===1?"#f43f5e22":"transparent",border:`1px solid ${p===1?"#f43f5e44":"var(--border)"}`,color:p===1?"#f43f5e":"var(--text-dim)",width:26,height:26,borderRadius:4,cursor:"pointer",fontSize:8,fontFamily:"inherit"}}>{p}</button>
                 ))}
               </div>
             </div>
@@ -283,26 +283,26 @@ export function AdminDashboard({user,onBack}){
           <div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14}}>
               {modules.map(m=>(
-                <div key={m.id} style={{background:"#040d18",border:`1px solid ${m.col}33`,borderRadius:10,padding:"20px"}}>
+                <div key={m.id} style={{background:"var(--panel-2)",border:`1px solid ${m.col}33`,borderRadius:10,padding:"20px"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
                       <div style={{width:36,height:36,borderRadius:8,background:`${m.col}22`,border:`1px solid ${m.col}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{m.icon}</div>
                       <div>
                         <div style={{fontSize:11,fontWeight:700,color:m.col,letterSpacing:0.5}}>{m.label}</div>
-                        <div style={{fontSize:8,color:"#334155"}}>{m.sessions} sessões ativas</div>
+                        <div style={{fontSize:8,color:"var(--text-dim)"}}>{m.sessions} sessões ativas</div>
                       </div>
                     </div>
                     <div style={{fontSize:14,fontWeight:700,color:m.col}}>{Math.round(m.sessions/totalSessions*100)}%</div>
                   </div>
                   {/* Usage bar */}
-                  <div style={{height:6,borderRadius:3,background:"#0d1e2e",overflow:"hidden",marginBottom:10}}>
+                  <div style={{height:6,borderRadius:3,background:"var(--surface-3)",overflow:"hidden",marginBottom:10}}>
                     <div style={{height:"100%",width:`${m.sessions/totalSessions*100*2}%`,background:`linear-gradient(90deg,${m.col}aa,${m.col})`,borderRadius:3,maxWidth:"100%"}}/>
                   </div>
                   {/* Mini stats */}
                   <div style={{display:"flex",gap:10}}>
                     {[["Hoje",m.sessions*8],[`Semana`,m.sessions*52],["Erros",`${(Math.random()*2).toFixed(1)}%`]].map(([lbl,val])=>(
-                      <div key={lbl} style={{flex:1,background:"#071020",borderRadius:4,padding:"6px 8px",textAlign:"center"}}>
-                        <div style={{fontSize:7,color:"#334155",letterSpacing:1,marginBottom:2}}>{lbl}</div>
+                      <div key={lbl} style={{flex:1,background:"var(--surface)",borderRadius:4,padding:"6px 8px",textAlign:"center"}}>
+                        <div style={{fontSize:7,color:"var(--text-dim)",letterSpacing:1,marginBottom:2}}>{lbl}</div>
                         <div style={{fontSize:10,color:m.col,fontWeight:700}}>{val}</div>
                       </div>
                     ))}
@@ -317,8 +317,8 @@ export function AdminDashboard({user,onBack}){
         {activeTab==="system"&&(
           <div style={{display:"flex",flexDirection:"column",gap:20}}>
             {/* Server health */}
-            <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"20px"}}>
-              <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:16}}>SAÚDE DO SERVIDOR</div>
+            <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"20px"}}>
+              <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:16}}>SAÚDE DO SERVIDOR</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
                 {[
                   {label:"CPU",val:serverLoad,unit:"%",max:100,col:parseInt(serverLoad)>80?"#f87171":"#22d3ee"},
@@ -326,14 +326,14 @@ export function AdminDashboard({user,onBack}){
                   {label:"DISCO",val:34,unit:"%",max:100,col:"#f59e0b"},
                   {label:"REDE",val:12,unit:"Mbps",max:100,col:"#a78bfa"},
                 ].map(m=>(
-                  <div key={m.label} style={{background:"#071020",borderRadius:8,padding:"14px",textAlign:"center"}}>
-                    <div style={{fontSize:8,color:"#334155",letterSpacing:2,marginBottom:8}}>{m.label}</div>
+                  <div key={m.label} style={{background:"var(--surface)",borderRadius:8,padding:"14px",textAlign:"center"}}>
+                    <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:2,marginBottom:8}}>{m.label}</div>
                     {/* Radial gauge */}
                     <svg width={80} height={50} style={{margin:"0 auto",display:"block"}}>
-                      <path d="M 10 45 A 30 30 0 0 1 70 45" fill="none" stroke="#0d1e2e" strokeWidth="6" strokeLinecap="round"/>
+                      <path d="M 10 45 A 30 30 0 0 1 70 45" fill="none" stroke="var(--surface-3)" strokeWidth="6" strokeLinecap="round"/>
                       <path d={`M 10 45 A 30 30 0 0 1 ${10+60*parseFloat(m.val)/m.max*0.9} ${45-Math.sin(Math.PI*parseFloat(m.val)/m.max*0.9)*30}`} fill="none" stroke={m.col} strokeWidth="6" strokeLinecap="round"/>
                       <text x="40" y="42" textAnchor="middle" fontSize="11" fill={m.col} fontFamily="monospace" fontWeight="bold">{m.val}</text>
-                      <text x="40" y="50" textAnchor="middle" fontSize="6" fill="#334155" fontFamily="monospace">{m.unit}</text>
+                      <text x="40" y="50" textAnchor="middle" fontSize="6" fill="var(--text-dim)" fontFamily="monospace">{m.unit}</text>
                     </svg>
                   </div>
                 ))}
@@ -341,20 +341,20 @@ export function AdminDashboard({user,onBack}){
             </div>
             {/* Performance metrics */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-              <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"20px"}}>
-                <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:12}}>TEMPOS DE RESPOSTA (ms)</div>
+              <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"20px"}}>
+                <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:12}}>TEMPOS DE RESPOSTA (ms)</div>
                 {[["API /simulate","48ms","#22c55e"],["API /save","23ms","#22c55e"],["API /auth","15ms","#22c55e"],["WebSocket","8ms","#22c55e"],["DB Query","12ms","#22c55e"]].map(([ep,t,col])=>(
-                  <div key={ep} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #0d1e2e"}}>
-                    <span style={{fontSize:9,color:"#475569",fontFamily:"monospace"}}>{ep}</span>
+                  <div key={ep} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid var(--surface-3)"}}>
+                    <span style={{fontSize:9,color:"var(--text-soft)",fontFamily:"monospace"}}>{ep}</span>
                     <span style={{fontSize:9,color:col,fontWeight:700}}>{t}</span>
                   </div>
                 ))}
               </div>
-              <div style={{background:"#040d18",border:"1px solid #1e3a5f",borderRadius:10,padding:"20px"}}>
-                <div style={{fontSize:8,color:"#334155",letterSpacing:3,marginBottom:12}}>VERSÃO DO SISTEMA</div>
+              <div style={{background:"var(--panel-2)",border:"1px solid var(--border)",borderRadius:10,padding:"20px"}}>
+                <div style={{fontSize:8,color:"var(--text-dim)",letterSpacing:3,marginBottom:12}}>VERSÃO DO SISTEMA</div>
                 {[["TechSim Frontend","v3.2.1","#22d3ee"],["API Server","v2.8.0","#4ade80"],["WebSocket","v1.4.2","#4ade80"],["Banco de Dados","PostgreSQL 15","#f59e0b"],["Cache","Redis 7.2","#f59e0b"],["Node.js","v20.11.0","#22c55e"]].map(([k,v2,col])=>(
-                  <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid #0d1e2e"}}>
-                    <span style={{fontSize:9,color:"#475569"}}>{k}</span>
+                  <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid var(--surface-3)"}}>
+                    <span style={{fontSize:9,color:"var(--text-soft)"}}>{k}</span>
                     <span style={{fontSize:9,color:col,fontFamily:"monospace"}}>{v2}</span>
                   </div>
                 ))}
@@ -368,11 +368,11 @@ export function AdminDashboard({user,onBack}){
           <div>
             <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
               {["ALL","ERROR","WARN","INFO","OK"].map(l=>(
-                <button key={l} style={{background:l==="ALL"?"#f43f5e22":"transparent",border:`1px solid ${l==="ALL"?"#f43f5e44":"#1e3a5f"}`,color:l==="ALL"?"#f43f5e":"#334155",padding:"4px 12px",borderRadius:4,cursor:"pointer",fontSize:8,fontFamily:"inherit",letterSpacing:1}}>{l}</button>
+                <button key={l} style={{background:l==="ALL"?"#f43f5e22":"transparent",border:`1px solid ${l==="ALL"?"#f43f5e44":"var(--border)"}`,color:l==="ALL"?"#f43f5e":"var(--text-dim)",padding:"4px 12px",borderRadius:4,cursor:"pointer",fontSize:8,fontFamily:"inherit",letterSpacing:1}}>{l}</button>
               ))}
-              <div style={{marginLeft:"auto",fontSize:8,color:"#334155"}}>● Auto-atualizar</div>
+              <div style={{marginLeft:"auto",fontSize:8,color:"var(--text-dim)"}}>● Auto-atualizar</div>
             </div>
-            <div style={{background:"#020b14",border:"1px solid #1e3a5f",borderRadius:8,padding:"14px",fontFamily:"monospace",fontSize:9,maxHeight:460,overflowY:"auto"}}>
+            <div style={{background:"var(--bg)",border:"1px solid var(--border)",borderRadius:8,padding:"14px",fontFamily:"monospace",fontSize:9,maxHeight:460,overflowY:"auto"}}>
               {[
                 ["02:14:32","INFO","[AUTH] Login: ana@techsim.com — 192.168.1.45"],
                 ["02:14:28","OK","[SIM] Simulação DC #4847 concluída — 12ms"],
@@ -390,10 +390,10 @@ export function AdminDashboard({user,onBack}){
                 ["02:10:55","ERROR","[SIM] Divisão por zero: resistência=0 — user#511"],
                 ["02:10:30","OK","[BACKUP] Snapshot automático — 284MB — S3 OK"],
               ].map(([time,level,msg],i)=>(
-                <div key={i} style={{display:"flex",gap:14,padding:"3px 0",borderBottom:"1px solid #0a1828"}}>
-                  <span style={{color:"#334155",minWidth:70}}>{time}</span>
-                  <span style={{color:eventCol[level]||"#94a3b8",minWidth:50,fontWeight:700}}>[{level}]</span>
-                  <span style={{color:"#475569"}}>{msg}</span>
+                <div key={i} style={{display:"flex",gap:14,padding:"3px 0",borderBottom:"1px solid var(--border)"}}>
+                  <span style={{color:"var(--text-dim)",minWidth:70}}>{time}</span>
+                  <span style={{color:eventCol[level]||"var(--text-soft)",minWidth:50,fontWeight:700}}>[{level}]</span>
+                  <span style={{color:"var(--text-soft)"}}>{msg}</span>
                 </div>
               ))}
             </div>
