@@ -22,7 +22,7 @@ export function PropertiesPanel({comp,lib,modColor,comps,wires,push,setSel,sd,on
   const B=(col,bg="#071020")=>({background:bg,border:`1px solid ${col}44`,color:col,borderRadius:4,padding:"4px 10px",cursor:"pointer",fontSize:10,fontFamily:"'Courier New',monospace",transition:"all 0.15s",letterSpacing:0.5});
 
   if(!comp&&!sd) return(
-    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:20}}>
+    <div className="editor-scroll" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:20,overflowY:"auto"}}>
       <div style={{fontSize:40}}>{MODS_ALL.find(m=>m.id===comp?.modId)?.icon||"⚡"}</div>
       <div style={{fontSize:10,color:"#334155",textAlign:"center",lineHeight:2}}>
         Selecione um componente<br/>para editar suas propriedades<br/><br/>
@@ -34,7 +34,7 @@ export function PropertiesPanel({comp,lib,modColor,comps,wires,push,setSel,sd,on
   );
 
   return(
-    <div style={{flex:1,overflowY:"auto",padding:"10px"}}>
+    <div className="editor-scroll" style={{flex:1,overflowY:"auto",padding:"10px"}}>
       {comp&&(
         <>
           {/* Header */}
