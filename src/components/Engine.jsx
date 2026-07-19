@@ -638,30 +638,6 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
           })()}
           {marquee && <div style={{ position: 'absolute', left: (Math.min(marquee.x1, marquee.x2) * zoom) + pan.x, top: (Math.min(marquee.y1, marquee.y2) * zoom) + pan.y, width: Math.abs(marquee.x2 - marquee.x1) * zoom, height: Math.abs(marquee.y2 - marquee.y1) * zoom, border: '1px dashed #8b5cf6', background: 'rgba(139,92,246,0.12)', pointerEvents: 'none' }} />}
 
-          {filteredLib.length > 0 && (
-            <div className="panel-glass editor-scroll absolute bottom-8 left-1/2 z-[90] flex max-w-[calc(100%-32px)] -translate-x-1/2 gap-3 overflow-x-auto rounded-[24px] px-4 py-3">
-              {filteredLib.map(item => {
-                const active = tool === item.t;
-                return (
-                  <button
-                    key={`dock-${item.t}`}
-                    type="button"
-                    draggable
-                    onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
-                    onClick={() => setTool(item.t)}
-                    title={item.tip || item.lbl}
-                    className={`flex min-w-[100px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border px-4 py-3 transition ${active ? 'bg-white/10 shadow-[0_0_18px_rgba(255,255,255,0.06)]' : 'bg-slate-950/50 hover:border-white/15'}`}
-                    style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
-                  >
-                    <span className="mono text-base font-bold" style={{ color: item.col || modColor }}>{item.sym}</span>
-                    <span className="text-xs font-semibold" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</span>
-                    {item.tip && <span className="text-[10px] text-slate-500">{item.tip}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[80] border-t border-white/8 bg-[#070a12]/90 px-4 py-2 backdrop-blur-xl">
             <div className="flex items-center gap-4 text-xs text-slate-500">
               <span className={`min-w-[220px] font-medium ${status.startsWith('✅') ? 'text-emerald-300' : status.startsWith('⚠️') || status.startsWith('❌') ? 'text-rose-300' : 'text-slate-400'}`}>{status}</span>
@@ -734,6 +710,33 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
             </div>
           )}
         </div>
+
+        {/* Componentes row — sits below the canvas in normal flow, just like the toolbar row above it, never overlapping it */}
+        {filteredLib.length > 0 && (
+          <div className="editor-scroll relative z-[100] shrink-0 overflow-x-auto border-t border-white/6 bg-[#070a12]/60 px-3 py-3 backdrop-blur-xl">
+            <div className="flex gap-3">
+              {filteredLib.map(item => {
+                const active = tool === item.t;
+                return (
+                  <button
+                    key={`dock-${item.t}`}
+                    type="button"
+                    draggable
+                    onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
+                    onClick={() => setTool(item.t)}
+                    title={item.tip || item.lbl}
+                    className={`flex min-w-[100px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border px-4 py-3 transition ${active ? 'bg-white/10 shadow-[0_0_18px_rgba(255,255,255,0.06)]' : 'bg-slate-950/50 hover:border-white/15'}`}
+                    style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
+                  >
+                    <span className="mono text-base font-bold" style={{ color: item.col || modColor }}>{item.sym}</span>
+                    <span className="text-xs font-semibold" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</span>
+                    {item.tip && <span className="text-[10px] text-slate-500">{item.tip}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </main>
 
       <aside className="flex w-[344px] min-h-0 shrink-0 flex-col overflow-hidden border-l border-white/6 bg-[#090d18]">
