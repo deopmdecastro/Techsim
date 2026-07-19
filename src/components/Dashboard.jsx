@@ -9,9 +9,10 @@ const MODULES = MODS_ALL.map(module => ({
 }));
 
 const SHORTCUTS = [
-  ["S", "Selecionar / mover"], ["W", "Traçar fio"], ["D", "Apagar"],
-  ["F9", "Calcular"], ["F5", "Simular"], ["Ctrl + D", "Duplicar componente"],
-  ["Ctrl + ←/→", "Girar 90°"], ["2 / 3", "Alternar visão 2D / 3D"],
+  ["Ctrl/Cmd + Z", "Desfazer"], ["Ctrl/Cmd + Y", "Refazer"], ["Ctrl/Cmd + S", "Salvar projeto"],
+  ["Ctrl/Cmd + D", "Duplicar seleção"], ["Ctrl/Cmd + G", "Agrupar seleção"], ["Ctrl/Cmd + Shift + G", "Desagrupar"],
+  ["Delete", "Excluir seleção"], ["F9", "Calcular circuito"], ["F5", "Iniciar/parar simulação"],
+  ["/", "Focar busca de componentes"], ["Esc", "Cancelar ação / limpar seleção"], ["?", "Ajuda de atalhos no editor"],
 ];
 
 const TABS = [

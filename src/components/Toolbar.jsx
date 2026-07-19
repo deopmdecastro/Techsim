@@ -39,7 +39,7 @@ export function Toolbar({
   const zoomLabel = useMemo(() => `${(zoom * 100).toFixed(0)}%`, [zoom]);
 
   return (
-    <div className="panel-glass absolute left-3 right-3 top-3 z-[100] rounded-2xl px-3 py-3">
+    <div className="panel-glass editor-scroll relative z-[100] overflow-x-auto rounded-2xl px-3 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <ToolButton icon="rotateLeft" compact disabled={!hist.past.length} onClick={() => dispatch({ type: 'UNDO' })} />
         <ToolButton icon="rotateRight" compact disabled={!hist.future.length} onClick={() => dispatch({ type: 'REDO' })} />

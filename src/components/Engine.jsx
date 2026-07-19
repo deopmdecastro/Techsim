@@ -44,6 +44,18 @@ function prettyDate(value) {
   try { return new Date(value).toLocaleString('pt-BR'); } catch { return value || ''; }
 }
 
+function relativeTime(timestamp, now) {
+  if (!timestamp) return null;
+  const diffSec = Math.max(0, Math.round((now - timestamp) / 1000));
+  if (diffSec < 5) return 'agora mesmo';
+  if (diffSec < 60) return `há ${diffSec}s`;
+  const diffMin = Math.round(diffSec / 60);
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `há ${diffHr}h`;
+  return `há ${Math.round(diffHr / 24)}d`;
+}
+
 export function Engine({ modId, modColor, lib, userName, modulePresets = [], savedProjects = [], onSaveProject, onLoadProject, initialProject, initialProjectKey = 'default' }) {
   const cvRef = useRef();
   const fileRef = useRef();
@@ -55,6 +67,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const suppressRealtime = useRef(false);
   const dragSelection = useRef(null);
   const selectionChangedByDrag = useRef(false);
+  const paletteSearchRef = useRef(null);
 
   const [hist, dispatch] = useReducer(hRed, { past: [], present: INIT, future: [] });
   const { comps, wires } = hist.present;
@@ -84,6 +97,17 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const [marquee, setMarquee] = useState(null);
   const [collaborators, setCollaborators] = useState({});
   const [canvasSize, setCanvasSize] = useState({ w: 0, h: 0 });
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [dirtySinceSave, setDirtySinceSave] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 15000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => { setDirtySinceSave(true); }, [comps, wires]);
 
   const moduleMeta = MODS_ALL.find(item => item.id === modId);
   const activePage = useMemo(() => pages.find(page => page.id === activePageId) || pages[0], [pages, activePageId]);
@@ -292,7 +316,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const exportSVG = useCallback(() => { const cv = cvRef.current; if (!cv) return; const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cv.width}" height="${cv.height}" viewBox="0 0 ${cv.width} ${cv.height}"><image href="${cv.toDataURL('image/png')}" width="${cv.width}" height="${cv.height}"/></svg>`; const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `techsim_${modId}_${Date.now()}.svg`; anchor.click(); URL.revokeObjectURL(url); }, [modId]);
   const clearAll = useCallback(() => { if (!window.confirm('Limpar circuito atual?')) return; dispatch({ type: 'RESET', p: INIT }); setSelectionState([]); setSd(null); setRunning(false); }, [setSelectionState]);
   const loadJSON = useCallback(event => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = e => { try { applyProjectState(JSON.parse(e.target.result), 'Projeto JSON carregado'); } catch { setStatus('❌ Arquivo JSON inválido'); } }; reader.readAsText(file); event.target.value = ''; }, [applyProjectState, setStatus]);
-  const saveProjectSnapshot = useCallback(async () => { if (!onSaveProject) return; const name = window.prompt('Nome do projeto:', `${moduleMeta?.label || modId} · ${userName || 'Projeto'}`); if (!name) return; const summary = `${comps.length} componentes · ${wires.length} fios · ${selection.length} selecionados`; const saved = await onSaveProject({ id: activeProjectId || undefined, moduleId: modId, name, summary, viewMode, data: buildProjectData() }); if (saved?.id) setActiveProjectId(saved.id); setStatus('Projeto salvo'); }, [onSaveProject, moduleMeta, modId, userName, comps.length, wires.length, selection.length, activeProjectId, viewMode, buildProjectData, setStatus]);
+  const saveProjectSnapshot = useCallback(async () => { if (!onSaveProject) return; const name = window.prompt('Nome do projeto:', `${moduleMeta?.label || modId} · ${userName || 'Projeto'}`); if (!name) return; const summary = `${comps.length} componentes · ${wires.length} fios · ${selection.length} selecionados`; const saved = await onSaveProject({ id: activeProjectId || undefined, moduleId: modId, name, summary, viewMode, data: buildProjectData() }); if (saved?.id) setActiveProjectId(saved.id); setLastSavedAt(Date.now()); setDirtySinceSave(false); setStatus('✅ Projeto salvo'); }, [onSaveProject, moduleMeta, modId, userName, comps.length, wires.length, selection.length, activeProjectId, viewMode, buildProjectData, setStatus]);
   const loadSavedProject = useCallback(async projectId => { if (!onLoadProject) return; setLoadingProjectId(projectId); try { applyProjectState(await onLoadProject(projectId), 'Projeto carregado'); } finally { setLoadingProjectId(''); } }, [onLoadProject, applyProjectState]);
   const switchPage = useCallback(pageId => { const target = pages.find(page => page.id === pageId); if (!target) return; setActivePageId(pageId); dispatch({ type: 'RESET', p: { comps: deepClone(target.comps || []), wires: deepClone(target.wires || []) } }); setSelectionState([]); setSd(null); }, [pages, setSelectionState]);
   const addPage = useCallback(() => { const page = createPage(`page-${Date.now()}`, pages.length + 1); setPages(current => [...current.map(item => item.id === activePageId ? { ...item, comps: deepClone(comps), wires: deepClone(wires) } : item), page]); setActivePageId(page.id); dispatch({ type: 'RESET', p: INIT }); setSelectionState([]); }, [pages.length, activePageId, comps, wires, setSelectionState]);
@@ -321,10 +345,30 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const onMove = useCallback(event => { const rect = cvRef.current.getBoundingClientRect(); const cx = event.clientX - rect.left, cy = event.clientY - rect.top; setMouse({ x: cx, y: cy }); if (isPan.current) { setPan({ x: panStart.current.px + cx - panStart.current.mx, y: panStart.current.py + cy - panStart.current.my }); return; } if (marquee) { const raw = worldFromCanvas(cx, cy, false); setMarquee(current => current ? { ...current, x2: raw.x, y2: raw.y } : null); return; } if (dragSelection.current) { const pos = worldFromCanvas(cx, cy, true); const dx = pos.x - dragSelection.current.world.x, dy = pos.y - dragSelection.current.world.y; if (!dx && !dy) return; selectionChangedByDrag.current = true; dispatch({ type: 'SET', p: { comps: dragSelection.current.from.comps.map(item => dragSelection.current.ids.includes(item.id) ? { ...item, x: item.x + dx, y: item.y + dy } : item), wires: dragSelection.current.from.wires.map(item => dragSelection.current.ids.includes(item.id) ? { ...item, x1: item.x1 + dx, y1: item.y1 + dy, x2: item.x2 + dx, y2: item.y2 + dy } : item) } }); } }, [marquee, worldFromCanvas]);
   const onUp = useCallback(() => { isPan.current = false; if (marquee) { const rect = { left: Math.min(marquee.x1, marquee.x2), right: Math.max(marquee.x1, marquee.x2), top: Math.min(marquee.y1, marquee.y2), bottom: Math.max(marquee.y1, marquee.y2) }; const ids = [...visibleComps.filter(component => boundsInsideRect(componentBounds(component), rect)).map(component => component.id), ...visibleWires.filter(wire => boundsInsideRect(wireBounds(wire), rect)).map(wire => wire.id)]; setSelectionState(marquee.keep ? [...selection, ...ids] : ids, ids[0]); setMarquee(null); } if (dragSelection.current) { if (selectionChangedByDrag.current) dispatch({ type: 'COMMIT', from: dragSelection.current.from }); dragSelection.current = null; } }, [marquee, visibleComps, visibleWires, setSelectionState, selection]);
 
-  useEffect(() => { const handler = event => { if (['INPUT', 'TEXTAREA'].includes(event.target.tagName)) return; const ctrl = event.ctrlKey || event.metaKey; if (ctrl && event.key === 'z') { event.preventDefault(); dispatch({ type: 'UNDO' }); } else if (ctrl && event.key === 'y') { event.preventDefault(); dispatch({ type: 'REDO' }); } else if (ctrl && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicateSelected(); } else if (ctrl && event.key.toLowerCase() === 'g') { event.preventDefault(); groupSelection(); } else if (ctrl && event.shiftKey && event.key.toLowerCase() === 'g') { event.preventDefault(); ungroupSelection(); } else if (event.key === 'Delete') { deleteSelection(); } else if (event.key === 'F9') { event.preventDefault(); calc(); } else if (event.key === 'F5') { event.preventDefault(); toggleSim(); } else if (event.key === 'Escape') { setWStart(null); setSelectionState([]); setMarquee(null); } }; window.addEventListener('keydown', handler); return () => window.removeEventListener('keydown', handler); }, [duplicateSelected, groupSelection, ungroupSelection, deleteSelection, calc, toggleSim, setSelectionState]);
+  useEffect(() => {
+    const handler = event => {
+      const inField = ['INPUT', 'TEXTAREA'].includes(event.target.tagName);
+      const ctrl = event.ctrlKey || event.metaKey;
+      if (ctrl && event.key.toLowerCase() === 's') { event.preventDefault(); saveProjectSnapshot(); return; }
+      if (!inField && event.key === '/') { event.preventDefault(); paletteSearchRef.current?.focus(); return; }
+      if (!inField && event.key === '?') { event.preventDefault(); setShowShortcuts(value => !value); return; }
+      if (inField) return;
+      if (ctrl && event.key === 'z') { event.preventDefault(); dispatch({ type: 'UNDO' }); }
+      else if (ctrl && event.key === 'y') { event.preventDefault(); dispatch({ type: 'REDO' }); }
+      else if (ctrl && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicateSelected(); }
+      else if (ctrl && event.key.toLowerCase() === 'g') { event.preventDefault(); groupSelection(); }
+      else if (ctrl && event.shiftKey && event.key.toLowerCase() === 'g') { event.preventDefault(); ungroupSelection(); }
+      else if (event.key === 'Delete') { deleteSelection(); }
+      else if (event.key === 'F9') { event.preventDefault(); calc(); }
+      else if (event.key === 'F5') { event.preventDefault(); toggleSim(); }
+      else if (event.key === 'Escape') { setWStart(null); setSelectionState([]); setMarquee(null); setShowShortcuts(false); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [duplicateSelected, groupSelection, ungroupSelection, deleteSelection, calc, toggleSim, setSelectionState, saveProjectSnapshot]);
   return (
     <div className="techsim-editor flex h-full overflow-hidden rounded-[28px] border border-white/8 bg-[#060913] shadow-[0_30px_90px_rgba(2,8,23,0.45)]">
-      <aside className="editor-scroll flex w-[286px] shrink-0 flex-col gap-4 border-r border-white/6 bg-[#090d18] px-4 py-4">
+      <aside className="editor-scroll flex w-[286px] min-h-0 shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-r border-white/6 bg-[#090d18] px-4 py-4">
         <div className="workspace-card rounded-[24px] p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-white shadow-[0_0_24px_rgba(139,92,246,0.18)]" style={{ background: `linear-gradient(135deg, ${hexToRgba(modColor, 0.28)}, rgba(99,102,241,0.15))` }}>
@@ -504,9 +548,10 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
           <div className="relative mb-3">
             <AppIcon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <input
+              ref={paletteSearchRef}
               value={paletteFilter}
               onChange={event => setPaletteFilter(event.target.value)}
-              placeholder="Buscar componente"
+              placeholder="Buscar componente (atalho: /)"
               className="w-full rounded-2xl border border-white/8 bg-slate-950/70 py-3 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-violet-400/40"
             />
           </div>
@@ -535,100 +580,163 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
         </section>
       </aside>
 
-      <main
-        className={`workspace-grid relative flex min-w-0 flex-1 overflow-hidden ${viewMode === '3d' ? 'bg-[#050814]' : 'bg-[#060914]'}`}
-        onDragOver={event => event.preventDefault()}
-        onDrop={event => {
-          event.preventDefault();
-          const type = event.dataTransfer.getData('text/plain');
-          if (!type) return;
-          const rect = cvRef.current.getBoundingClientRect();
-          placeComponent(type, worldFromCanvas(event.clientX - rect.left, event.clientY - rect.top, true));
-        }}
-      >
-        <canvas
-          ref={cvRef}
-          style={{ display: 'block', width: '100%', height: '100%', cursor: isPan.current ? 'grabbing' : tool === 'wire' ? 'crosshair' : 'default' }}
-          onMouseDown={onDown}
-          onMouseMove={onMove}
-          onMouseUp={onUp}
-          onContextMenu={event => { event.preventDefault(); isPan.current = false; }}
-        />
-        {showGrid && canvasSize.w > 0 && (() => {
-          const cell = G * zoom;
-          if (cell < 6) return null;
-          const startCol = Math.floor(-pan.x / cell) - 1;
-          const endCol = Math.ceil((canvasSize.w - pan.x) / cell) + 1;
-          const startRow = Math.floor(-pan.y / cell) - 1;
-          const endRow = Math.ceil((canvasSize.h - pan.y) / cell) + 1;
-          const cols = []; for (let i = startCol; i <= endCol; i++) cols.push(i);
-          const rows = []; for (let i = startRow; i <= endRow; i++) rows.push(i);
-          const rowLabel = i => { const n = ((i % 26) + 26) % 26; return String.fromCharCode(65 + n); };
-          return (
-            <>
-              <div className="canvas-ruler pointer-events-none absolute left-0 right-0 top-0 z-[5] h-6 overflow-hidden border-b border-white/8">
-                {cols.map(i => (
-                  <span key={`c${i}`} style={{ position: 'absolute', left: pan.x + i * cell, top: 4, transform: 'translateX(-50%)' }} className="mono text-[10px] text-slate-500">
-                    {i + 1}
-                  </span>
-                ))}
-              </div>
-              <div className="canvas-ruler pointer-events-none absolute bottom-0 left-0 top-6 z-[5] w-6 overflow-hidden border-r border-white/8">
-                {rows.map(i => (
-                  <span key={`r${i}`} style={{ position: 'absolute', top: pan.y + i * cell, left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)' }} className="mono text-[10px] text-slate-500">
-                    {rowLabel(i)}
-                  </span>
-                ))}
-              </div>
-            </>
-          );
-        })()}
-        {marquee && <div style={{ position: 'absolute', left: (Math.min(marquee.x1, marquee.x2) * zoom) + pan.x, top: (Math.min(marquee.y1, marquee.y2) * zoom) + pan.y, width: Math.abs(marquee.x2 - marquee.x1) * zoom, height: Math.abs(marquee.y2 - marquee.y1) * zoom, border: '1px dashed #8b5cf6', background: 'rgba(139,92,246,0.12)', pointerEvents: 'none' }} />}
-        <Toolbar tool={tool} setTool={setTool} sel={primaryId} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={id => setSelectionState(id ? [id] : [], id)} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={rotateSelected} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={() => push({ comps: comps.map((component, index) => ({ ...component, x: G * 3 + (index % 5) * G * 3, y: G * 3 + Math.floor(index / 5) * G * 3 })), wires })} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} exportSVG={exportSVG} duplicateSelected={duplicateSelected} fitView={fitView} saveProjectSnapshot={saveProjectSnapshot} showGrid={showGrid} setShowGrid={setShowGrid} />
-        <input ref={fileRef} type="file" accept=".json" onChange={loadJSON} style={{ display: 'none' }} />
+      <main className={`relative flex min-w-0 flex-1 flex-col overflow-hidden ${viewMode === '3d' ? 'bg-[#050814]' : 'bg-[#060914]'}`}>
+        {/* Toolbar row — sits above the canvas in normal flow, never overlapping it */}
+        <div className="relative z-[100] shrink-0 border-b border-white/6 bg-[#070a12]/60 px-3 py-3 backdrop-blur-xl">
+          <Toolbar tool={tool} setTool={setTool} sel={primaryId} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={id => setSelectionState(id ? [id] : [], id)} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={rotateSelected} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={() => push({ comps: comps.map((component, index) => ({ ...component, x: G * 3 + (index % 5) * G * 3, y: G * 3 + Math.floor(index / 5) * G * 3 })), wires })} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} exportSVG={exportSVG} duplicateSelected={duplicateSelected} fitView={fitView} saveProjectSnapshot={saveProjectSnapshot} showGrid={showGrid} setShowGrid={setShowGrid} />
+          <input ref={fileRef} type="file" accept=".json" onChange={loadJSON} style={{ display: 'none' }} />
+        </div>
 
-        {filteredLib.length > 0 && (
-          <div className="panel-glass absolute bottom-8 left-1/2 z-[90] flex max-w-[calc(100%-32px)] -translate-x-1/2 gap-3 overflow-x-auto rounded-[24px] px-4 py-3">
-            {filteredLib.map(item => {
-              const active = tool === item.t;
-              return (
-                <button
-                  key={`dock-${item.t}`}
-                  type="button"
-                  draggable
-                  onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
-                  onClick={() => setTool(item.t)}
-                  title={item.tip || item.lbl}
-                  className={`flex min-w-[100px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border px-4 py-3 transition ${active ? 'bg-white/10 shadow-[0_0_18px_rgba(255,255,255,0.06)]' : 'bg-slate-950/50 hover:border-white/15'}`}
-                  style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
-                >
-                  <span className="mono text-base font-bold" style={{ color: item.col || modColor }}>{item.sym}</span>
-                  <span className="text-xs font-semibold" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</span>
-                  {item.tip && <span className="text-[10px] text-slate-500">{item.tip}</span>}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* Canvas row — fully independent area below the toolbar, sized to exactly what's left */}
+        <div
+          className="workspace-grid relative min-h-0 flex-1 overflow-hidden"
+          onDragOver={event => event.preventDefault()}
+          onDrop={event => {
+            event.preventDefault();
+            const type = event.dataTransfer.getData('text/plain');
+            if (!type) return;
+            const rect = cvRef.current.getBoundingClientRect();
+            placeComponent(type, worldFromCanvas(event.clientX - rect.left, event.clientY - rect.top, true));
+          }}
+        >
+          <canvas
+            ref={cvRef}
+            style={{ display: 'block', width: '100%', height: '100%', cursor: isPan.current ? 'grabbing' : tool === 'wire' ? 'crosshair' : 'default' }}
+            onMouseDown={onDown}
+            onMouseMove={onMove}
+            onMouseUp={onUp}
+            onContextMenu={event => { event.preventDefault(); isPan.current = false; }}
+          />
+          {showGrid && canvasSize.w > 0 && (() => {
+            const cell = G * zoom;
+            if (cell < 6) return null;
+            const startCol = Math.floor(-pan.x / cell) - 1;
+            const endCol = Math.ceil((canvasSize.w - pan.x) / cell) + 1;
+            const startRow = Math.floor(-pan.y / cell) - 1;
+            const endRow = Math.ceil((canvasSize.h - pan.y) / cell) + 1;
+            const cols = []; for (let i = startCol; i <= endCol; i++) cols.push(i);
+            const rows = []; for (let i = startRow; i <= endRow; i++) rows.push(i);
+            const rowLabel = i => { const n = ((i % 26) + 26) % 26; return String.fromCharCode(65 + n); };
+            return (
+              <>
+                <div className="canvas-ruler pointer-events-none absolute left-0 right-0 top-0 z-[5] h-6 overflow-hidden border-b border-white/8">
+                  {cols.map(i => (
+                    <span key={`c${i}`} style={{ position: 'absolute', left: pan.x + i * cell, top: 4, transform: 'translateX(-50%)' }} className="mono text-[10px] text-slate-500">
+                      {i + 1}
+                    </span>
+                  ))}
+                </div>
+                <div className="canvas-ruler pointer-events-none absolute bottom-0 left-0 top-6 z-[5] w-6 overflow-hidden border-r border-white/8">
+                  {rows.map(i => (
+                    <span key={`r${i}`} style={{ position: 'absolute', top: pan.y + i * cell, left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)' }} className="mono text-[10px] text-slate-500">
+                      {rowLabel(i)}
+                    </span>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+          {marquee && <div style={{ position: 'absolute', left: (Math.min(marquee.x1, marquee.x2) * zoom) + pan.x, top: (Math.min(marquee.y1, marquee.y2) * zoom) + pan.y, width: Math.abs(marquee.x2 - marquee.x1) * zoom, height: Math.abs(marquee.y2 - marquee.y1) * zoom, border: '1px dashed #8b5cf6', background: 'rgba(139,92,246,0.12)', pointerEvents: 'none' }} />}
 
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[80] border-t border-white/8 bg-[#070a12]/90 px-4 py-2 backdrop-blur-xl">
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <span className={`min-w-[220px] font-medium ${status.startsWith('✅') ? 'text-emerald-300' : status.startsWith('⚠️') || status.startsWith('❌') ? 'text-rose-300' : 'text-slate-400'}`}>{status}</span>
-            <span className="mono">C:{comps.length}</span>
-            <span className="mono">F:{wires.length}</span>
-            <span className="mono">SEL:{selection.length}</span>
-            <span className="mono">LAYER:{currentLayerId}</span>
-            <span className="mono">COL:A-1</span>
-            <span className="flex-1" />
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/15 bg-emerald-500/8 px-3 py-1 text-emerald-200">
-              <span className="status-dot h-2 w-2 rounded-full bg-emerald-400" />
-              Último salvamento: há 2 min
-            </span>
+          {filteredLib.length > 0 && (
+            <div className="panel-glass editor-scroll absolute bottom-8 left-1/2 z-[90] flex max-w-[calc(100%-32px)] -translate-x-1/2 gap-3 overflow-x-auto rounded-[24px] px-4 py-3">
+              {filteredLib.map(item => {
+                const active = tool === item.t;
+                return (
+                  <button
+                    key={`dock-${item.t}`}
+                    type="button"
+                    draggable
+                    onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
+                    onClick={() => setTool(item.t)}
+                    title={item.tip || item.lbl}
+                    className={`flex min-w-[100px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border px-4 py-3 transition ${active ? 'bg-white/10 shadow-[0_0_18px_rgba(255,255,255,0.06)]' : 'bg-slate-950/50 hover:border-white/15'}`}
+                    style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
+                  >
+                    <span className="mono text-base font-bold" style={{ color: item.col || modColor }}>{item.sym}</span>
+                    <span className="text-xs font-semibold" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</span>
+                    {item.tip && <span className="text-[10px] text-slate-500">{item.tip}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[80] border-t border-white/8 bg-[#070a12]/90 px-4 py-2 backdrop-blur-xl">
+            <div className="flex items-center gap-4 text-xs text-slate-500">
+              <span className={`min-w-[220px] font-medium ${status.startsWith('✅') ? 'text-emerald-300' : status.startsWith('⚠️') || status.startsWith('❌') ? 'text-rose-300' : 'text-slate-400'}`}>{status}</span>
+              <span className="mono">C:{comps.length}</span>
+              <span className="mono">F:{wires.length}</span>
+              <span className="mono">SEL:{selection.length}</span>
+              <span className="mono">LAYER:{currentLayerId}</span>
+              <span className="mono">COL:A-1</span>
+              <span className="flex-1" />
+              <button
+                type="button"
+                onClick={() => setShowShortcuts(true)}
+                className="pointer-events-auto mono rounded-full border border-white/8 bg-slate-950/60 px-3 py-1 text-slate-400 transition hover:border-violet-400/30 hover:text-violet-200"
+                title="Ver atalhos de teclado (?)"
+              >
+                ?
+              </button>
+              {lastSavedAt ? (
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${dirtySinceSave ? 'border-amber-400/20 bg-amber-500/8 text-amber-200' : 'border-emerald-400/15 bg-emerald-500/8 text-emerald-200'}`}>
+                  <span className={`status-dot h-2 w-2 rounded-full ${dirtySinceSave ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                  {dirtySinceSave ? 'Alterações não salvas · último salvamento ' : 'Salvo '}
+                  {relativeTime(lastSavedAt, nowTick)}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/60 px-3 py-1 text-slate-500">
+                  <span className="h-2 w-2 rounded-full bg-slate-500" />
+                  Ainda não salvo
+                </span>
+              )}
+            </div>
           </div>
+
+          {showShortcuts && (
+            <div
+              className="absolute inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowShortcuts(false)}
+            >
+              <div
+                className="panel-glass editor-scroll max-h-[80%] w-[min(420px,90%)] overflow-y-auto rounded-[24px] p-6"
+                onClick={event => event.stopPropagation()}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Atalhos de teclado</div>
+                  <button type="button" onClick={() => setShowShortcuts(false)} className="rounded-lg border border-white/10 bg-slate-950/70 px-2 py-1 text-xs text-slate-400 hover:text-white">
+                    Fechar
+                  </button>
+                </div>
+                <div className="space-y-2 text-sm">
+                  {[
+                    ['Ctrl/Cmd + Z', 'Desfazer'],
+                    ['Ctrl/Cmd + Y', 'Refazer'],
+                    ['Ctrl/Cmd + S', 'Salvar projeto'],
+                    ['Ctrl/Cmd + D', 'Duplicar seleção'],
+                    ['Ctrl/Cmd + G', 'Agrupar seleção'],
+                    ['Ctrl/Cmd + Shift + G', 'Desagrupar'],
+                    ['Delete', 'Excluir seleção'],
+                    ['F9', 'Calcular circuito'],
+                    ['F5', 'Iniciar/parar simulação'],
+                    ['/', 'Focar busca de componentes'],
+                    ['Esc', 'Cancelar ação / limpar seleção'],
+                    ['?', 'Abrir/fechar esta ajuda'],
+                  ].map(([key, label]) => (
+                    <div key={key} className="flex items-center justify-between rounded-xl border border-white/6 bg-slate-950/50 px-3 py-2">
+                      <span className="text-slate-300">{label}</span>
+                      <kbd className="mono rounded-lg border border-violet-400/25 bg-violet-500/10 px-2 py-1 text-xs text-violet-200">{key}</kbd>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
-      <aside className="flex w-[344px] shrink-0 flex-col border-l border-white/6 bg-[#090d18]">
+      <aside className="flex w-[344px] min-h-0 shrink-0 flex-col overflow-hidden border-l border-white/6 bg-[#090d18]">
         <div className="border-b border-white/6 px-5 py-4">
           <div className="flex items-start gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-white" style={{ background: `linear-gradient(135deg, ${hexToRgba(modColor, 0.28)}, rgba(99,102,241,0.15))` }}>
