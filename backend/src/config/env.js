@@ -7,7 +7,10 @@ const csv = (value = '') => value.split(',').map(item => item.trim()).filter(Boo
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || 4000),
-  corsOrigins: csv(process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:8080'),
+  corsOrigins: csv(
+    process.env.CORS_ORIGIN ||
+      'http://localhost:5173,http://localhost:8080,http://localhost:4000,http://127.0.0.1:5173,http://127.0.0.1:8080,http://127.0.0.1:4000'
+  ),
   jwtSecret: process.env.JWT_SECRET || 'change-me-in-production',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   postgres: {
