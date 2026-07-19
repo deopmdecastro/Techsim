@@ -64,8 +64,8 @@ export function AuthModal({ mode, onClose, onSubmit }) {
     >
       <div
         onClick={event => event.stopPropagation()}
-        className="ts-card w-[420px] max-w-full p-7"
-        style={{ background: "linear-gradient(180deg, var(--panel-2), var(--surface))" }}
+        className="ts-card editor-scroll w-[420px] max-w-full overflow-y-auto p-7"
+        style={{ background: "linear-gradient(180deg, var(--panel-2), var(--surface))", maxHeight: "90vh" }}
       >
         <div className="mb-6 flex items-start justify-between">
           <div>
