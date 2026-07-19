@@ -7,6 +7,7 @@ import { boundsInsideRect, componentBounds, distanceToWire, wireBounds } from '.
 import { drawComp, drawGrid, drawWire } from '../canvas/shapes';
 import { PropertiesPanel } from './PropertiesPanel';
 import { Toolbar } from './Toolbar';
+import { AppIcon } from './ui/AppIcon';
 import { publishEditorPresence, publishEditorSelection, publishEditorSnapshot, publishSimulationState, subscribeToProject } from '../services/realtime';
 
 const deepClone = value => JSON.parse(JSON.stringify(value));
@@ -321,55 +322,238 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const onUp = useCallback(() => { isPan.current = false; if (marquee) { const rect = { left: Math.min(marquee.x1, marquee.x2), right: Math.max(marquee.x1, marquee.x2), top: Math.min(marquee.y1, marquee.y2), bottom: Math.max(marquee.y1, marquee.y2) }; const ids = [...visibleComps.filter(component => boundsInsideRect(componentBounds(component), rect)).map(component => component.id), ...visibleWires.filter(wire => boundsInsideRect(wireBounds(wire), rect)).map(wire => wire.id)]; setSelectionState(marquee.keep ? [...selection, ...ids] : ids, ids[0]); setMarquee(null); } if (dragSelection.current) { if (selectionChangedByDrag.current) dispatch({ type: 'COMMIT', from: dragSelection.current.from }); dragSelection.current = null; } }, [marquee, visibleComps, visibleWires, setSelectionState, selection]);
 
   useEffect(() => { const handler = event => { if (['INPUT', 'TEXTAREA'].includes(event.target.tagName)) return; const ctrl = event.ctrlKey || event.metaKey; if (ctrl && event.key === 'z') { event.preventDefault(); dispatch({ type: 'UNDO' }); } else if (ctrl && event.key === 'y') { event.preventDefault(); dispatch({ type: 'REDO' }); } else if (ctrl && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicateSelected(); } else if (ctrl && event.key.toLowerCase() === 'g') { event.preventDefault(); groupSelection(); } else if (ctrl && event.shiftKey && event.key.toLowerCase() === 'g') { event.preventDefault(); ungroupSelection(); } else if (event.key === 'Delete') { deleteSelection(); } else if (event.key === 'F9') { event.preventDefault(); calc(); } else if (event.key === 'F5') { event.preventDefault(); toggleSim(); } else if (event.key === 'Escape') { setWStart(null); setSelectionState([]); setMarquee(null); } }; window.addEventListener('keydown', handler); return () => window.removeEventListener('keydown', handler); }, [duplicateSelected, groupSelection, ungroupSelection, deleteSelection, calc, toggleSim, setSelectionState]);
-
   return (
-    <div className="techsim-editor" style={{ display: 'flex', flex: 1, overflow: 'hidden', height: '100%', fontFamily: "'Courier New','Consolas',monospace" }}>
-      <div className="editor-scroll" style={{ width: 208, background: '#040d18', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', padding: '12px 10px', gap: 8, overflowY: 'auto', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#071020', border: `1px solid ${hexToRgba(modColor, 0.28)}`, borderRadius: 12, padding: '9px 10px', marginBottom: 2 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: hexToRgba(modColor, 0.16), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: modColor, flexShrink: 0 }}>{moduleMeta?.icon || '⚙️'}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{moduleMeta?.label || 'Editor'}</div>
-            <div style={{ fontSize: 8.5, color: '#475569' }}>Editor de lógica e simulação</div>
+    <div className="techsim-editor flex h-full overflow-hidden rounded-[28px] border border-white/8 bg-[#060913] shadow-[0_30px_90px_rgba(2,8,23,0.45)]">
+      <aside className="editor-scroll flex w-[286px] shrink-0 flex-col gap-4 border-r border-white/6 bg-[#090d18] px-4 py-4">
+        <div className="workspace-card rounded-[24px] p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-white shadow-[0_0_24px_rgba(139,92,246,0.18)]" style={{ background: `linear-gradient(135deg, ${hexToRgba(modColor, 0.28)}, rgba(99,102,241,0.15))` }}>
+              <AppIcon icon={moduleMeta?.iconify} className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-slate-100">{moduleMeta?.label || 'Editor'}</div>
+              <div className="mt-1 text-xs text-slate-500">Editor visual de lógica e simulação</div>
+            </div>
+          </div>
+          {moduleMeta?.wiki && (
+            <a
+              href={moduleMeta.wiki}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-violet-400/30 hover:text-violet-200"
+            >
+              <AppIcon name="wiki" className="h-4 w-4" />
+              Wikipedia do módulo
+            </a>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {[
+            { t: 'select', lbl: 'Selecionar', icon: 'select' },
+            { t: 'wire', lbl: 'Conectar', icon: 'wire' },
+            { t: 'delete', lbl: 'Excluir', icon: 'delete' },
+          ].map(button => {
+            const active = tool === button.t;
+            return (
+              <button
+                key={button.t}
+                type="button"
+                onClick={() => setTool(button.t)}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                  active
+                    ? 'border-violet-400/60 bg-violet-500/18 text-violet-100 shadow-[0_0_22px_rgba(139,92,246,0.18)]'
+                    : 'border-white/8 bg-slate-950/60 text-slate-300 hover:border-white/15 hover:text-white'
+                }`}
+              >
+                <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? 'bg-violet-500/18 text-violet-200' : 'bg-white/5 text-slate-400'}`}>
+                  <AppIcon name={button.icon} className="h-4 w-4" />
+                </span>
+                {button.lbl}
+              </button>
+            );
+          })}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button type="button" onClick={groupSelection} className="rounded-2xl border border-white/8 bg-slate-950/60 px-3 py-3 text-sm font-medium text-violet-200 transition hover:border-violet-400/30">
+              Agrupar
+            </button>
+            <button type="button" onClick={ungroupSelection} className="rounded-2xl border border-white/8 bg-slate-950/60 px-3 py-3 text-sm font-medium text-slate-300 transition hover:border-white/15 hover:text-white">
+              Desagrupar
+            </button>
           </div>
         </div>
 
-        {[
-          { t: 'select', lbl: 'Selecionar', sym: TOOL_GLYPHS.select },
-          { t: 'wire', lbl: 'Conectar', sym: TOOL_GLYPHS.wire },
-          { t: 'delete', lbl: 'Excluir', sym: TOOL_GLYPHS.delete },
-        ].map(button => (
-          <button
-            key={button.t}
-            className="editor-btn-hover"
-            onClick={() => setTool(button.t)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
-              background: tool === button.t ? 'rgba(139,92,246,0.16)' : '#071020',
-              border: `1px solid ${tool === button.t ? '#8b5cf6' : '#1e293b'}`,
-              color: tool === button.t ? '#c4b5fd' : '#94a3b8',
-              borderRadius: 10, padding: '9px 10px', cursor: 'pointer', fontSize: 11.5,
-            }}
-          >{button.sym} {button.lbl}</button>
-        ))}
-        <button className="editor-btn-hover" onClick={groupSelection} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: '#071020', border: '1px solid #1e293b', color: '#a78bfa', borderRadius: 10, padding: '9px 10px', fontSize: 11.5 }}>⧉ Agrupar</button>
-        <button className="editor-btn-hover" onClick={ungroupSelection} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: '#071020', border: '1px solid #1e293b', color: '#94a3b8', borderRadius: 10, padding: '9px 10px', fontSize: 11.5 }}>↯ Desagrupar</button>
-        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>PÁGINAS</div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{pages.map(page => <button key={page.id} className="editor-btn-hover" onClick={() => switchPage(page.id)} style={{ background: page.id === activePageId ? `${modColor}18` : '#071020', border: `1px solid ${page.id === activePageId ? modColor : '#1e293b'}`, color: page.id === activePageId ? modColor : '#64748b', borderRadius: 999, padding: '4px 8px', fontSize: 7 }}>{page.name}</button>)}<button className="editor-btn-hover" onClick={addPage} style={{ background: '#071020', border: '1px dashed #334155', color: '#94a3b8', borderRadius: 999, padding: '4px 8px', fontSize: 7 }}>+ Página</button></div>
-        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>CAMADAS</div>
-        <button className="editor-btn-hover" onClick={addLayer} style={{ background: '#071020', border: '1px dashed #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 8px' }}>+ Camada</button>
-        {(activePage?.layers || []).map(layer => <div key={layer.id} style={{ background: layer.id === currentLayerId ? 'rgba(139,92,246,0.14)' : '#050e1a', border: `1px solid ${layer.id === currentLayerId ? '#8b5cf6' : '#1e293b'}`, borderRadius: 10, padding: 8 }}><div style={{ display: 'flex', gap: 4, alignItems: 'center' }}><button onClick={() => updateActivePageMeta(page => ({ ...page, currentLayerId: layer.id }))} style={{ flex: 1, background: 'transparent', border: 'none', color: layer.id === currentLayerId ? '#c4b5fd' : '#cbd5e1', textAlign: 'left', fontWeight: layer.id === currentLayerId ? 700 : 400 }}>{layer.name}</button><button onClick={() => toggleLayer(layer.id, 'visible')} style={{ background: 'transparent', border: 'none', color: '#94a3b8' }}>{layer.visible === false ? '🙈' : '👁'}</button><button onClick={() => toggleLayer(layer.id, 'locked')} style={{ background: 'transparent', border: 'none', color: layer.locked ? '#f59e0b' : '#22c55e' }}>{layer.locked ? '🔒' : '🔓'}</button></div><button className="editor-btn-hover" onClick={() => moveSelectionToLayer(layer.id)} style={{ width: '100%', marginTop: 6, background: '#0a1120', border: '1px solid #1e293b', color: '#64748b', borderRadius: 8, padding: '5px 6px', fontSize: 9 }}>Mover seleção</button></div>)}
-        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>MACROS</div>
-        {(activePage?.groups || []).length ? (activePage?.groups || []).map(group => <button key={group.id} className="editor-btn-hover" onClick={() => setSelectionState(group.memberIds, group.memberIds[0])} style={{ background: '#071020', border: '1px solid #1e293b', color: '#a78bfa', borderRadius: 8, padding: '6px 8px', textAlign: 'left' }}>{group.name}<div style={{ color: '#64748b', fontSize: 6 }}>{group.memberIds.length} itens</div></button>) : <div className="editor-empty-hint">Sem marcos. Selecione componentes e use ações.</div>}
-        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>PRESETS</div>
-        {modulePresets.length ? modulePresets.map(preset => <button key={preset.id} className="editor-btn-hover" onClick={() => applyProjectState(preset.project, `Preset carregado: ${preset.title}`)} style={{ background: '#071020', border: `1px solid ${hexToRgba(modColor, 0.22)}`, borderRadius: 10, padding: '8px 8px', textAlign: 'left' }}><div style={{ fontSize: 8, color: modColor, fontWeight: 700 }}>{preset.title}</div><div style={{ fontSize: 6.5, color: '#64748b' }}>{preset.description}</div></button>) : <div className="editor-empty-hint">Sem presets para este módulo.</div>}
-        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>PROJETOS</div>
-        {savedProjects.length ? savedProjects.slice(0, 6).map(project => <button key={project.id} className="editor-btn-hover" onClick={() => loadSavedProject(project.id)} disabled={loadingProjectId === project.id} style={{ background: '#050e1a', border: '1px solid #1e293b', borderRadius: 10, padding: '8px 8px', textAlign: 'left' }}><div style={{ fontSize: 7.8, color: modColor, fontWeight: 700 }}>{project.name}</div><div style={{ fontSize: 6.2, color: '#475569' }}>{project.summary}</div><div style={{ fontSize: 5.8, color: '#334155' }}>{prettyDate(project.updatedAt)}</div></button>) : <div className="editor-empty-hint">Nenhum projeto salvo neste módulo ainda.</div>}
-        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>COMPONENTES</div>
-        <input value={paletteFilter} onChange={event => setPaletteFilter(event.target.value)} placeholder="buscar componente" style={{ background: '#071020', border: '1px solid #1e293b', color: '#cbd5e1', padding: '6px 8px', borderRadius: 8, fontSize: 10 }} />
-        {filteredLib.length ? filteredLib.map(item => <button key={item.t} className="editor-btn-hover" draggable onDragStart={event => event.dataTransfer.setData('text/plain', item.t)} onClick={() => setTool(item.t)} style={{ background: tool === item.t ? `${item.col}18` : '#050e1a', border: `1px solid ${tool === item.t ? item.col : '#1e293b'}`, color: tool === item.t ? item.col : '#94a3b8', borderRadius: 10, padding: '8px 6px' }}>{item.sym} {item.lbl}</button>) : <div className="editor-empty-hint">Nenhum componente corresponde à busca.</div>}
-      </div>
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: viewMode === '3d' ? 'radial-gradient(circle at top, #082033 0%, #020b14 55%)' : '#020b14' }} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); const type = event.dataTransfer.getData('text/plain'); if (!type) return; const rect = cvRef.current.getBoundingClientRect(); placeComponent(type, worldFromCanvas(event.clientX - rect.left, event.clientY - rect.top, true)); }}>
-        <canvas ref={cvRef} style={{ display: 'block', width: '100%', height: '100%', cursor: isPan.current ? 'grabbing' : tool === 'wire' ? 'crosshair' : 'default' }} onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onContextMenu={event => { event.preventDefault(); isPan.current = false; }} />
+        <section className="workspace-card rounded-[24px] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Páginas</div>
+              <div className="mt-1 text-sm text-slate-300">Gerencie áreas de projeto</div>
+            </div>
+            <button type="button" onClick={addPage} className="flex h-9 w-9 items-center justify-center rounded-xl border border-dashed border-white/12 bg-slate-950/60 text-slate-300 transition hover:border-violet-400/30 hover:text-violet-200">
+              <AppIcon name="plus" className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-2">
+            {pages.map(page => {
+              const active = page.id === activePageId;
+              return (
+                <button
+                  key={page.id}
+                  type="button"
+                  onClick={() => switchPage(page.id)}
+                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${active ? 'border-violet-400/50 bg-violet-500/15' : 'border-white/8 bg-slate-950/60 hover:border-white/15'}`}
+                >
+                  <span className={`text-sm font-medium ${active ? 'text-violet-100' : 'text-slate-300'}`}>{page.name}</span>
+                  <AppIcon name="page" className={`h-4 w-4 ${active ? 'text-violet-200' : 'text-slate-500'}`} />
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="workspace-card rounded-[24px] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Camadas</div>
+              <div className="mt-1 text-sm text-slate-300">Controle de visibilidade</div>
+            </div>
+            <button type="button" onClick={addLayer} className="rounded-xl border border-dashed border-white/12 bg-slate-950/60 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-violet-400/30 hover:text-violet-200">
+              + Camada
+            </button>
+          </div>
+          <div className="space-y-3">
+            {(activePage?.layers || []).map(layer => {
+              const active = layer.id === currentLayerId;
+              return (
+                <div key={layer.id} className={`rounded-2xl border p-3 ${active ? 'border-violet-400/45 bg-violet-500/12' : 'border-white/8 bg-slate-950/60'}`}>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => updateActivePageMeta(page => ({ ...page, currentLayerId: layer.id }))} className={`flex-1 text-left text-sm font-medium ${active ? 'text-violet-100' : 'text-slate-200'}`}>
+                      {layer.name}
+                    </button>
+                    <button type="button" onClick={() => toggleLayer(layer.id, 'visible')} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-black/20 text-slate-300 transition hover:border-white/15">
+                      <AppIcon name={layer.visible === false ? 'hidden' : 'visible'} className="h-4 w-4" />
+                    </button>
+                    <button type="button" onClick={() => toggleLayer(layer.id, 'locked')} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 bg-black/20 transition hover:border-white/15">
+                      <AppIcon name={layer.locked ? 'lock' : 'unlock'} className={`h-4 w-4 ${layer.locked ? 'text-amber-300' : 'text-emerald-300'}`} />
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => moveSelectionToLayer(layer.id)} className="mt-3 w-full rounded-xl border border-white/8 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 transition hover:border-violet-400/30 hover:text-violet-200">
+                    Mover seleção
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="workspace-card rounded-[24px] p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Macros</div>
+          <div className="mt-3 space-y-2">
+            {(activePage?.groups || []).length ? (activePage?.groups || []).map(group => (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => setSelectionState(group.memberIds, group.memberIds[0])}
+                className="w-full rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-left transition hover:border-violet-400/30"
+              >
+                <div className="text-sm font-medium text-violet-200">{group.name}</div>
+                <div className="mt-1 text-xs text-slate-500">{group.memberIds.length} itens</div>
+              </button>
+            )) : <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/50 px-4 py-5 text-sm leading-6 text-slate-500">Sem macros no momento. Selecione componentes e use Agrupar.</div>}
+          </div>
+        </section>
+
+        <section className="workspace-card rounded-[24px] p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Presets</div>
+          <div className="mt-3 space-y-2">
+            {modulePresets.length ? modulePresets.map(preset => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => applyProjectState(preset.project, `Preset carregado: ${preset.title}`)}
+                className="w-full rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-left transition hover:border-violet-400/30"
+              >
+                <div className="text-sm font-medium" style={{ color: modColor }}>{preset.title}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-500">{preset.description}</div>
+              </button>
+            )) : <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/50 px-4 py-5 text-sm leading-6 text-slate-500">Sem presets para este módulo.</div>}
+          </div>
+        </section>
+
+        <section className="workspace-card rounded-[24px] p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Projetos</div>
+          <div className="mt-3 space-y-2">
+            {savedProjects.length ? savedProjects.slice(0, 6).map(project => (
+              <button
+                key={project.id}
+                type="button"
+                onClick={() => loadSavedProject(project.id)}
+                disabled={loadingProjectId === project.id}
+                className="w-full rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 text-left transition hover:border-violet-400/30 disabled:opacity-50"
+              >
+                <div className="text-sm font-medium" style={{ color: modColor }}>{project.name}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-500">{project.summary}</div>
+                <div className="mt-2 text-[11px] text-slate-600">{prettyDate(project.updatedAt)}</div>
+              </button>
+            )) : <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/50 px-4 py-5 text-sm leading-6 text-slate-500">Nenhum projeto salvo neste módulo ainda.</div>}
+          </div>
+        </section>
+
+        <section className="workspace-card rounded-[24px] p-4">
+          <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Componentes</div>
+          <div className="relative mb-3">
+            <AppIcon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              value={paletteFilter}
+              onChange={event => setPaletteFilter(event.target.value)}
+              placeholder="Buscar componente"
+              className="w-full rounded-2xl border border-white/8 bg-slate-950/70 py-3 pl-10 pr-4 text-sm text-slate-100 outline-none transition focus:border-violet-400/40"
+            />
+          </div>
+          <div className="space-y-2">
+            {filteredLib.length ? filteredLib.map(item => {
+              const active = tool === item.t;
+              return (
+                <button
+                  key={item.t}
+                  type="button"
+                  draggable
+                  onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
+                  onClick={() => setTool(item.t)}
+                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${active ? 'bg-white/8 shadow-[0_0_18px_rgba(255,255,255,0.04)]' : 'bg-slate-950/60 hover:border-white/15'} `}
+                  style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
+                >
+                  <div>
+                    <div className="text-sm font-medium" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</div>
+                    <div className="mt-1 text-xs text-slate-500">{item.tip || item.k}</div>
+                  </div>
+                  <span className="mono text-sm font-semibold" style={{ color: item.col }}>{item.sym}</span>
+                </button>
+              );
+            }) : <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/50 px-4 py-5 text-sm leading-6 text-slate-500">Nenhum componente corresponde à busca.</div>}
+          </div>
+        </section>
+      </aside>
+
+      <main
+        className={`workspace-grid relative flex min-w-0 flex-1 overflow-hidden ${viewMode === '3d' ? 'bg-[#050814]' : 'bg-[#060914]'}`}
+        onDragOver={event => event.preventDefault()}
+        onDrop={event => {
+          event.preventDefault();
+          const type = event.dataTransfer.getData('text/plain');
+          if (!type) return;
+          const rect = cvRef.current.getBoundingClientRect();
+          placeComponent(type, worldFromCanvas(event.clientX - rect.left, event.clientY - rect.top, true));
+        }}
+      >
+        <canvas
+          ref={cvRef}
+          style={{ display: 'block', width: '100%', height: '100%', cursor: isPan.current ? 'grabbing' : tool === 'wire' ? 'crosshair' : 'default' }}
+          onMouseDown={onDown}
+          onMouseMove={onMove}
+          onMouseUp={onUp}
+          onContextMenu={event => { event.preventDefault(); isPan.current = false; }}
+        />
         {showGrid && canvasSize.w > 0 && (() => {
           const cell = G * zoom;
           if (cell < 6) return null;
@@ -382,66 +566,92 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
           const rowLabel = i => { const n = ((i % 26) + 26) % 26; return String.fromCharCode(65 + n); };
           return (
             <>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 18, background: '#040d18cc', borderBottom: '1px solid #1e293b', overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }}>
+              <div className="canvas-ruler pointer-events-none absolute left-0 right-0 top-0 z-[5] h-6 overflow-hidden border-b border-white/8">
                 {cols.map(i => (
-                  <span key={`c${i}`} style={{ position: 'absolute', left: pan.x + i * cell, top: 3, transform: 'translateX(-50%)', fontSize: 8.5, color: '#3a5a70' }}>{i + 1}</span>
+                  <span key={`c${i}`} style={{ position: 'absolute', left: pan.x + i * cell, top: 4, transform: 'translateX(-50%)' }} className="mono text-[10px] text-slate-500">
+                    {i + 1}
+                  </span>
                 ))}
               </div>
-              <div style={{ position: 'absolute', top: 18, left: 0, bottom: 0, width: 18, background: '#040d18cc', borderRight: '1px solid #1e293b', overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }}>
+              <div className="canvas-ruler pointer-events-none absolute bottom-0 left-0 top-6 z-[5] w-6 overflow-hidden border-r border-white/8">
                 {rows.map(i => (
-                  <span key={`r${i}`} style={{ position: 'absolute', top: pan.y + i * cell, left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', fontSize: 8.5, color: '#3a5a70' }}>{rowLabel(i)}</span>
+                  <span key={`r${i}`} style={{ position: 'absolute', top: pan.y + i * cell, left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)' }} className="mono text-[10px] text-slate-500">
+                    {rowLabel(i)}
+                  </span>
                 ))}
               </div>
             </>
           );
         })()}
-        {marquee && <div style={{ position: 'absolute', left: (Math.min(marquee.x1, marquee.x2) * zoom) + pan.x, top: (Math.min(marquee.y1, marquee.y2) * zoom) + pan.y, width: Math.abs(marquee.x2 - marquee.x1) * zoom, height: Math.abs(marquee.y2 - marquee.y1) * zoom, border: '1px dashed #38bdf8', background: 'rgba(56,189,248,0.08)', pointerEvents: 'none' }} />}
+        {marquee && <div style={{ position: 'absolute', left: (Math.min(marquee.x1, marquee.x2) * zoom) + pan.x, top: (Math.min(marquee.y1, marquee.y2) * zoom) + pan.y, width: Math.abs(marquee.x2 - marquee.x1) * zoom, height: Math.abs(marquee.y2 - marquee.y1) * zoom, border: '1px dashed #8b5cf6', background: 'rgba(139,92,246,0.12)', pointerEvents: 'none' }} />}
         <Toolbar tool={tool} setTool={setTool} sel={primaryId} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={id => setSelectionState(id ? [id] : [], id)} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={rotateSelected} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={() => push({ comps: comps.map((component, index) => ({ ...component, x: G * 3 + (index % 5) * G * 3, y: G * 3 + Math.floor(index / 5) * G * 3 })), wires })} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} exportSVG={exportSVG} duplicateSelected={duplicateSelected} fitView={fitView} saveProjectSnapshot={saveProjectSnapshot} showGrid={showGrid} setShowGrid={setShowGrid} />
         <input ref={fileRef} type="file" accept=".json" onChange={loadJSON} style={{ display: 'none' }} />
 
         {filteredLib.length > 0 && (
-          <div style={{ position: 'absolute', left: 12, right: 12, bottom: 30, display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 10px', background: '#040d18ee', border: `1px solid ${hexToRgba(modColor, 0.16)}`, borderRadius: 12, backdropFilter: 'blur(8px)', boxShadow: '0 10px 34px #0008', zIndex: 90 }}>
-            {filteredLib.map(item => (
-              <button
-                key={`dock-${item.t}`}
-                className="editor-btn-hover"
-                draggable
-                onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
-                onClick={() => setTool(item.t)}
-                title={item.tip || item.lbl}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-                  minWidth: 78, padding: '10px 8px', borderRadius: 10, cursor: 'pointer', flexShrink: 0,
-                  background: tool === item.t ? `${item.col}18` : '#071020',
-                  border: `1px solid ${tool === item.t ? item.col : '#1e293b'}`,
-                }}
-              >
-                <span style={{ fontSize: 15, color: item.col || modColor, fontWeight: 700 }}>{item.sym}</span>
-                <span style={{ fontSize: 9.5, color: tool === item.t ? item.col : '#cbd5e1', fontWeight: 600, whiteSpace: 'nowrap' }}>{item.lbl}</span>
-                {item.tip && <span style={{ fontSize: 7, color: '#475569', whiteSpace: 'nowrap' }}>{item.tip}</span>}
-              </button>
-            ))}
+          <div className="panel-glass absolute bottom-8 left-1/2 z-[90] flex max-w-[calc(100%-32px)] -translate-x-1/2 gap-3 overflow-x-auto rounded-[24px] px-4 py-3">
+            {filteredLib.map(item => {
+              const active = tool === item.t;
+              return (
+                <button
+                  key={`dock-${item.t}`}
+                  type="button"
+                  draggable
+                  onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
+                  onClick={() => setTool(item.t)}
+                  title={item.tip || item.lbl}
+                  className={`flex min-w-[100px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border px-4 py-3 transition ${active ? 'bg-white/10 shadow-[0_0_18px_rgba(255,255,255,0.06)]' : 'bg-slate-950/50 hover:border-white/15'}`}
+                  style={{ borderColor: active ? item.col : 'rgba(255,255,255,0.08)' }}
+                >
+                  <span className="mono text-base font-bold" style={{ color: item.col || modColor }}>{item.sym}</span>
+                  <span className="text-xs font-semibold" style={{ color: active ? item.col : '#e2e8f0' }}>{item.lbl}</span>
+                  {item.tip && <span className="text-[10px] text-slate-500">{item.tip}</span>}
+                </button>
+              );
+            })}
           </div>
         )}
 
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#040d18cc', borderTop: '1px solid #1e293b', padding: '4px 12px', display: 'flex', gap: 10, fontSize: 8, color: '#334155', alignItems: 'center' }}>
-          <span style={{ color: status.startsWith('✅') ? '#22c55e' : status.startsWith('⚠️') || status.startsWith('❌') ? '#f87171' : '#3a5a70', minWidth: 180 }}>{status}</span>
-          <span>C:{comps.length}</span><span>F:{wires.length}</span><span>SEL:{selection.length}</span><span>LAYER:{currentLayerId}</span><span>COL:A-1</span>
-          <span style={{ flex: 1 }} />
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#071020', border: '1px solid #1e293b', borderRadius: 999, padding: '2px 8px', color: '#4ade80' }}>✓ Último salvamento: há 2 min</span>
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[80] border-t border-white/8 bg-[#070a12]/90 px-4 py-2 backdrop-blur-xl">
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <span className={`min-w-[220px] font-medium ${status.startsWith('✅') ? 'text-emerald-300' : status.startsWith('⚠️') || status.startsWith('❌') ? 'text-rose-300' : 'text-slate-400'}`}>{status}</span>
+            <span className="mono">C:{comps.length}</span>
+            <span className="mono">F:{wires.length}</span>
+            <span className="mono">SEL:{selection.length}</span>
+            <span className="mono">LAYER:{currentLayerId}</span>
+            <span className="mono">COL:A-1</span>
+            <span className="flex-1" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/15 bg-emerald-500/8 px-3 py-1 text-emerald-200">
+              <span className="status-dot h-2 w-2 rounded-full bg-emerald-400" />
+              Último salvamento: há 2 min
+            </span>
+          </div>
         </div>
-      </div>
-      <div style={{ width: 292, background: '#040d18', borderLeft: '1px solid #1e293b', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: hexToRgba(modColor, 0.16), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: modColor, flexShrink: 0 }}>{moduleMeta?.icon || '⚙️'}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{moduleMeta?.label}</div>
-            <div style={{ fontSize: 8.5, color: '#475569' }}>{moduleMeta?.desc}</div>
-            {collaboratorList.length > 0 && <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>{collaboratorList.map(item => <span key={item.socketId} style={{ padding: '2px 8px', borderRadius: 999, background: '#071020', border: '1px solid #1e293b', color: '#22d3ee', fontSize: 7 }}>{item.userName || 'Colab.'}</span>)}</div>}
+      </main>
+
+      <aside className="flex w-[344px] shrink-0 flex-col border-l border-white/6 bg-[#090d18]">
+        <div className="border-b border-white/6 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-white" style={{ background: `linear-gradient(135deg, ${hexToRgba(modColor, 0.28)}, rgba(99,102,241,0.15))` }}>
+              <AppIcon icon={moduleMeta?.iconify} className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-slate-100">{moduleMeta?.label}</div>
+              <div className="mt-1 text-xs leading-5 text-slate-500">{moduleMeta?.desc}</div>
+              {collaboratorList.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {collaboratorList.map(item => (
+                    <span key={item.socketId} className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1 text-[11px] font-medium text-cyan-200">
+                      <span className="h-2 w-2 rounded-full bg-cyan-300" />
+                      {item.userName || 'Colab.'}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <PropertiesPanel comp={selComp} lib={lib} modColor={modColor} comps={comps} wires={wires} push={push} setSel={id => setSelectionState(id ? [id] : [], id)} sd={sd} onCalc={calc} onToggleSim={toggleSim} running={running} hist={hist} />
-      </div>
+      </aside>
     </div>
   );
 }
