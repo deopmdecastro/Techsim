@@ -6,7 +6,7 @@ export function Toolbar({
   comps, wires, push, dispatch, setSel, setSnap, setOrtho, setZoom, setPan,
   doRot, calc, toggleSim, saveJSON, fileRef, clearAll, autoLayout,
   wireColor, setWireColor, viewMode, setViewMode, exportPNG, exportSVG,
-  duplicateSelected, fitView, saveProjectSnapshot,
+  duplicateSelected, fitView, saveProjectSnapshot, showGrid, setShowGrid,
 }) {
   const [showWireColors, setShowWireColors] = useState(false);
 
@@ -93,12 +93,16 @@ export function Toolbar({
       <button onClick={() => setZoom(value => Math.max(value * 0.8, 0.15))} title="Zoom -" style={buttonStyle("#64748b")}>−</button>
       <button onClick={fitView} title="Ajustar à área útil" style={buttonStyle("#64748b")}>◎ Fit</button>
       <button onClick={() => { setZoom(1); setPan({ x:0, y:0 }); }} style={{...buttonStyle("#64748b"), minWidth:48, fontSize:9}}>{(zoom * 100).toFixed(0)}%</button>
-      <button onClick={() => setSnap(value => !value)} style={buttonStyle(snap ? "#22c55e" : "#475569", snap ? "#052e16" : "#071020", snap)}>{snap ? "SNAP✓" : "SNAP"}</button>
+      <button onClick={() => setSnap(value => !value)} style={buttonStyle(snap ? "#22c55e" : "#475569", snap ? "#052e16" : "#071020", snap)}>{snap ? "Snap" : "Snap"}</button>
+      {setShowGrid && <button onClick={() => setShowGrid(value => !value)} style={buttonStyle(showGrid ? "#22d3ee" : "#475569", showGrid ? "#06303a" : "#071020", showGrid)}>Grade</button>}
       <button onClick={() => setOrtho(value => !value)} style={buttonStyle(ortho ? "#22d3ee" : "#475569", ortho ? "#06303a" : "#071020", ortho)}>{ortho ? "ORTHO✓" : "ORTHO"}</button>
-      <button onClick={() => setViewMode("2d")} style={buttonStyle(viewMode === "2d" ? "#38bdf8" : "#475569", viewMode === "2d" ? "#082f49" : "#071020", viewMode === "2d")}>2D</button>
-      <button onClick={() => setViewMode("3d")} style={buttonStyle(viewMode === "3d" ? modColor : "#475569", viewMode === "3d" ? hexToRgba(modColor, 0.12) : "#071020", viewMode === "3d")}>3D</button>
+      {separator}
+      <div style={{display:"flex", borderRadius:8, overflow:"hidden", border:"1px solid #1e293b"}}>
+        <button onClick={() => setViewMode("2d")} style={{...buttonStyle(viewMode === "2d" ? "#38bdf8" : "#475569", viewMode === "2d" ? "#082f49" : "#071020", viewMode === "2d"), border:"none", borderRadius:0}}>2D</button>
+        <button onClick={() => setViewMode("3d")} style={{...buttonStyle(viewMode === "3d" ? "#a78bfa" : "#475569", viewMode === "3d" ? "rgba(139,92,246,0.16)" : "#071020", viewMode === "3d"), border:"none", borderRadius:0}}>3D</button>
+      </div>
 
-      {running && <span style={{fontSize:8, color:"#22c55e", padding:"2px 8px", background:"#052e16", borderRadius:10, border:"1px solid #22c55e44", marginLeft:4}}>● AO VIVO</span>}
+      {running && <span style={{fontSize:9, color:"#22c55e", padding:"3px 10px", background:"#052e16", borderRadius:999, border:"1px solid #22c55e44", marginLeft:4, display:"flex", alignItems:"center", gap:5}}><span style={{width:6,height:6,borderRadius:"50%",background:"#22c55e",display:"inline-block"}}/> AO VIVO</span>}
     </div>
   );
 }

@@ -69,6 +69,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const [running, setRunning] = useState(false);
   const [snap, setSnap] = useState(true);
   const [ortho, setOrtho] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
   const [viewMode, setViewMode] = useState('3d');
   const [paletteFilter, setPaletteFilter] = useState('');
   const [sd, setSd] = useState(null);
@@ -81,6 +82,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const [activeProjectId, setActiveProjectId] = useState(initialProject?.id || '');
   const [marquee, setMarquee] = useState(null);
   const [collaborators, setCollaborators] = useState({});
+  const [canvasSize, setCanvasSize] = useState({ w: 0, h: 0 });
 
   const moduleMeta = MODS_ALL.find(item => item.id === modId);
   const activePage = useMemo(() => pages.find(page => page.id === activePageId) || pages[0], [pages, activePageId]);
@@ -169,7 +171,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv) return undefined;
-    const observer = new ResizeObserver(() => { cv.width = cv.parentElement.offsetWidth; cv.height = cv.parentElement.offsetHeight; });
+    const observer = new ResizeObserver(() => { cv.width = cv.parentElement.offsetWidth; cv.height = cv.parentElement.offsetHeight; setCanvasSize({ w: cv.width, h: cv.height }); });
     observer.observe(cv.parentElement);
     return () => observer.disconnect();
   }, []);
@@ -223,7 +225,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
     const ctx = cv.getContext('2d');
     const { width: W, height: H } = cv;
     ctx.clearRect(0, 0, W, H);
-    drawGrid(ctx, W, H, pan, zoom);
+    if (showGrid) drawGrid(ctx, W, H, pan, zoom);
     ctx.save();
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
@@ -243,7 +245,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
       });
     });
     ctx.restore();
-  }, [visibleComps, visibleWires, selection, running, modColor, tick, sd, pan, zoom, wStart, mouse, ortho, wireColor, viewMode, collaboratorList, activePageId, comps]);
+  }, [visibleComps, visibleWires, selection, running, modColor, tick, sd, pan, zoom, wStart, mouse, ortho, wireColor, viewMode, collaboratorList, activePageId, comps, showGrid]);
 
   const hitComp = useCallback((wx, wy) => visibleComps.find(component => Math.abs(component.x - wx) < G && Math.abs(component.y - wy) < G && layerMap.get(component.layerId || currentLayerId)?.locked !== true), [visibleComps, layerMap, currentLayerId]);
   const hitWire = useCallback((wx, wy) => visibleWires.find(wire => distanceToWire({ x: wx, y: wy }, wire) < 10 / zoom && layerMap.get(wire.layerId || currentLayerId)?.locked !== true), [visibleWires, zoom, layerMap, currentLayerId]);
@@ -322,20 +324,42 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
 
   return (
     <div className="techsim-editor" style={{ display: 'flex', flex: 1, overflow: 'hidden', height: '100%', fontFamily: "'Courier New','Consolas',monospace" }}>
-      <div className="editor-scroll" style={{ width: 180, background: '#040d18', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', padding: '10px 8px', gap: 8, overflowY: 'auto', flexShrink: 0 }}>
-        <div style={{ fontSize: 7, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>TOOLS</div>
-        {[{ t: 'select', lbl: 'Selecionar', sym: TOOL_GLYPHS.select, color: '#fb7185' }, { t: 'wire', lbl: 'Conectar', sym: TOOL_GLYPHS.wire, color: '#94a3b8' }, { t: 'delete', lbl: 'Excluir', sym: TOOL_GLYPHS.delete, color: '#f87171' }].map(button => <button key={button.t} className="editor-btn-hover" onClick={() => setTool(button.t)} style={{ background: tool === button.t ? `${button.color}16` : '#050e1a', border: `1px solid ${tool === button.t ? button.color : '#1e293b'}`, color: tool === button.t ? button.color : '#475569', borderRadius: 10, padding: '8px 5px', cursor: 'pointer' }}>{button.sym} {button.lbl}</button>)}
-        <div style={{ display: 'grid', gap: 6 }}>
-          <button className="editor-btn-hover" onClick={groupSelection} style={{ background: '#071020', border: '1px solid #1e293b', color: '#a78bfa', borderRadius: 8, padding: '6px 8px' }}>⧉ Agrupar</button>
-          <button className="editor-btn-hover" onClick={ungroupSelection} style={{ background: '#071020', border: '1px solid #1e293b', color: '#94a3b8', borderRadius: 8, padding: '6px 8px' }}>↯ Desagrupar</button>
+      <div className="editor-scroll" style={{ width: 208, background: '#040d18', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', padding: '12px 10px', gap: 8, overflowY: 'auto', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#071020', border: `1px solid ${hexToRgba(modColor, 0.28)}`, borderRadius: 12, padding: '9px 10px', marginBottom: 2 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: hexToRgba(modColor, 0.16), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: modColor, flexShrink: 0 }}>{moduleMeta?.icon || '⚙️'}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{moduleMeta?.label || 'Editor'}</div>
+            <div style={{ fontSize: 8.5, color: '#475569' }}>Editor de lógica e simulação</div>
+          </div>
         </div>
+
+        {[
+          { t: 'select', lbl: 'Selecionar', sym: TOOL_GLYPHS.select },
+          { t: 'wire', lbl: 'Conectar', sym: TOOL_GLYPHS.wire },
+          { t: 'delete', lbl: 'Excluir', sym: TOOL_GLYPHS.delete },
+        ].map(button => (
+          <button
+            key={button.t}
+            className="editor-btn-hover"
+            onClick={() => setTool(button.t)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+              background: tool === button.t ? 'rgba(139,92,246,0.16)' : '#071020',
+              border: `1px solid ${tool === button.t ? '#8b5cf6' : '#1e293b'}`,
+              color: tool === button.t ? '#c4b5fd' : '#94a3b8',
+              borderRadius: 10, padding: '9px 10px', cursor: 'pointer', fontSize: 11.5,
+            }}
+          >{button.sym} {button.lbl}</button>
+        ))}
+        <button className="editor-btn-hover" onClick={groupSelection} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: '#071020', border: '1px solid #1e293b', color: '#a78bfa', borderRadius: 10, padding: '9px 10px', fontSize: 11.5 }}>⧉ Agrupar</button>
+        <button className="editor-btn-hover" onClick={ungroupSelection} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: '#071020', border: '1px solid #1e293b', color: '#94a3b8', borderRadius: 10, padding: '9px 10px', fontSize: 11.5 }}>↯ Desagrupar</button>
         <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>PÁGINAS</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{pages.map(page => <button key={page.id} className="editor-btn-hover" onClick={() => switchPage(page.id)} style={{ background: page.id === activePageId ? `${modColor}18` : '#071020', border: `1px solid ${page.id === activePageId ? modColor : '#1e293b'}`, color: page.id === activePageId ? modColor : '#64748b', borderRadius: 999, padding: '4px 8px', fontSize: 7 }}>{page.name}</button>)}<button className="editor-btn-hover" onClick={addPage} style={{ background: '#071020', border: '1px dashed #334155', color: '#94a3b8', borderRadius: 999, padding: '4px 8px', fontSize: 7 }}>+ Página</button></div>
         <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>CAMADAS</div>
         <button className="editor-btn-hover" onClick={addLayer} style={{ background: '#071020', border: '1px dashed #334155', color: '#94a3b8', borderRadius: 8, padding: '6px 8px' }}>+ Camada</button>
-        {(activePage?.layers || []).map(layer => <div key={layer.id} style={{ background: layer.id === currentLayerId ? `${modColor}12` : '#050e1a', border: `1px solid ${layer.id === currentLayerId ? modColor : '#1e293b'}`, borderRadius: 8, padding: 6 }}><div style={{ display: 'flex', gap: 4, alignItems: 'center' }}><button onClick={() => updateActivePageMeta(page => ({ ...page, currentLayerId: layer.id }))} style={{ flex: 1, background: 'transparent', border: 'none', color: layer.id === currentLayerId ? modColor : '#cbd5e1', textAlign: 'left' }}>{layer.name}</button><button onClick={() => toggleLayer(layer.id, 'visible')} style={{ background: 'transparent', border: 'none', color: '#94a3b8' }}>{layer.visible === false ? '🙈' : '👁'}</button><button onClick={() => toggleLayer(layer.id, 'locked')} style={{ background: 'transparent', border: 'none', color: layer.locked ? '#f87171' : '#22c55e' }}>{layer.locked ? '🔒' : '🔓'}</button></div><button className="editor-btn-hover" onClick={() => moveSelectionToLayer(layer.id)} style={{ width: '100%', marginTop: 4, background: '#071020', border: '1px solid #1e293b', color: '#64748b', borderRadius: 6, padding: '3px 6px', fontSize: 7 }}>Mover seleção</button></div>)}
-        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>GRUPOS</div>
-        {(activePage?.groups || []).length ? (activePage?.groups || []).map(group => <button key={group.id} className="editor-btn-hover" onClick={() => setSelectionState(group.memberIds, group.memberIds[0])} style={{ background: '#071020', border: '1px solid #1e293b', color: '#a78bfa', borderRadius: 8, padding: '6px 8px', textAlign: 'left' }}>{group.name}<div style={{ color: '#64748b', fontSize: 6 }}>{group.memberIds.length} itens</div></button>) : <div className="editor-empty-hint">Sem grupos. Selecione componentes e use Ctrl+G.</div>}
+        {(activePage?.layers || []).map(layer => <div key={layer.id} style={{ background: layer.id === currentLayerId ? 'rgba(139,92,246,0.14)' : '#050e1a', border: `1px solid ${layer.id === currentLayerId ? '#8b5cf6' : '#1e293b'}`, borderRadius: 10, padding: 8 }}><div style={{ display: 'flex', gap: 4, alignItems: 'center' }}><button onClick={() => updateActivePageMeta(page => ({ ...page, currentLayerId: layer.id }))} style={{ flex: 1, background: 'transparent', border: 'none', color: layer.id === currentLayerId ? '#c4b5fd' : '#cbd5e1', textAlign: 'left', fontWeight: layer.id === currentLayerId ? 700 : 400 }}>{layer.name}</button><button onClick={() => toggleLayer(layer.id, 'visible')} style={{ background: 'transparent', border: 'none', color: '#94a3b8' }}>{layer.visible === false ? '🙈' : '👁'}</button><button onClick={() => toggleLayer(layer.id, 'locked')} style={{ background: 'transparent', border: 'none', color: layer.locked ? '#f59e0b' : '#22c55e' }}>{layer.locked ? '🔒' : '🔓'}</button></div><button className="editor-btn-hover" onClick={() => moveSelectionToLayer(layer.id)} style={{ width: '100%', marginTop: 6, background: '#0a1120', border: '1px solid #1e293b', color: '#64748b', borderRadius: 8, padding: '5px 6px', fontSize: 9 }}>Mover seleção</button></div>)}
+        <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>MACROS</div>
+        {(activePage?.groups || []).length ? (activePage?.groups || []).map(group => <button key={group.id} className="editor-btn-hover" onClick={() => setSelectionState(group.memberIds, group.memberIds[0])} style={{ background: '#071020', border: '1px solid #1e293b', color: '#a78bfa', borderRadius: 8, padding: '6px 8px', textAlign: 'left' }}>{group.name}<div style={{ color: '#64748b', fontSize: 6 }}>{group.memberIds.length} itens</div></button>) : <div className="editor-empty-hint">Sem marcos. Selecione componentes e use ações.</div>}
         <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>PRESETS</div>
         {modulePresets.length ? modulePresets.map(preset => <button key={preset.id} className="editor-btn-hover" onClick={() => applyProjectState(preset.project, `Preset carregado: ${preset.title}`)} style={{ background: '#071020', border: `1px solid ${hexToRgba(modColor, 0.22)}`, borderRadius: 10, padding: '8px 8px', textAlign: 'left' }}><div style={{ fontSize: 8, color: modColor, fontWeight: 700 }}>{preset.title}</div><div style={{ fontSize: 6.5, color: '#64748b' }}>{preset.description}</div></button>) : <div className="editor-empty-hint">Sem presets para este módulo.</div>}
         <div className="editor-section-label" style={{ fontSize: 8, color: '#1e3a5f', textAlign: 'center', letterSpacing: 2 }}>PROJETOS</div>
@@ -346,13 +370,76 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
       </div>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: viewMode === '3d' ? 'radial-gradient(circle at top, #082033 0%, #020b14 55%)' : '#020b14' }} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); const type = event.dataTransfer.getData('text/plain'); if (!type) return; const rect = cvRef.current.getBoundingClientRect(); placeComponent(type, worldFromCanvas(event.clientX - rect.left, event.clientY - rect.top, true)); }}>
         <canvas ref={cvRef} style={{ display: 'block', width: '100%', height: '100%', cursor: isPan.current ? 'grabbing' : tool === 'wire' ? 'crosshair' : 'default' }} onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onContextMenu={event => { event.preventDefault(); isPan.current = false; }} />
+        {showGrid && canvasSize.w > 0 && (() => {
+          const cell = G * zoom;
+          if (cell < 6) return null;
+          const startCol = Math.floor(-pan.x / cell) - 1;
+          const endCol = Math.ceil((canvasSize.w - pan.x) / cell) + 1;
+          const startRow = Math.floor(-pan.y / cell) - 1;
+          const endRow = Math.ceil((canvasSize.h - pan.y) / cell) + 1;
+          const cols = []; for (let i = startCol; i <= endCol; i++) cols.push(i);
+          const rows = []; for (let i = startRow; i <= endRow; i++) rows.push(i);
+          const rowLabel = i => { const n = ((i % 26) + 26) % 26; return String.fromCharCode(65 + n); };
+          return (
+            <>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 18, background: '#040d18cc', borderBottom: '1px solid #1e293b', overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }}>
+                {cols.map(i => (
+                  <span key={`c${i}`} style={{ position: 'absolute', left: pan.x + i * cell, top: 3, transform: 'translateX(-50%)', fontSize: 8.5, color: '#3a5a70' }}>{i + 1}</span>
+                ))}
+              </div>
+              <div style={{ position: 'absolute', top: 18, left: 0, bottom: 0, width: 18, background: '#040d18cc', borderRight: '1px solid #1e293b', overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }}>
+                {rows.map(i => (
+                  <span key={`r${i}`} style={{ position: 'absolute', top: pan.y + i * cell, left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', fontSize: 8.5, color: '#3a5a70' }}>{rowLabel(i)}</span>
+                ))}
+              </div>
+            </>
+          );
+        })()}
         {marquee && <div style={{ position: 'absolute', left: (Math.min(marquee.x1, marquee.x2) * zoom) + pan.x, top: (Math.min(marquee.y1, marquee.y2) * zoom) + pan.y, width: Math.abs(marquee.x2 - marquee.x1) * zoom, height: Math.abs(marquee.y2 - marquee.y1) * zoom, border: '1px dashed #38bdf8', background: 'rgba(56,189,248,0.08)', pointerEvents: 'none' }} />}
-        <Toolbar tool={tool} setTool={setTool} sel={primaryId} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={id => setSelectionState(id ? [id] : [], id)} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={rotateSelected} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={() => push({ comps: comps.map((component, index) => ({ ...component, x: G * 3 + (index % 5) * G * 3, y: G * 3 + Math.floor(index / 5) * G * 3 })), wires })} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} exportSVG={exportSVG} duplicateSelected={duplicateSelected} fitView={fitView} saveProjectSnapshot={saveProjectSnapshot} />
+        <Toolbar tool={tool} setTool={setTool} sel={primaryId} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={id => setSelectionState(id ? [id] : [], id)} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={rotateSelected} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={() => push({ comps: comps.map((component, index) => ({ ...component, x: G * 3 + (index % 5) * G * 3, y: G * 3 + Math.floor(index / 5) * G * 3 })), wires })} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} exportSVG={exportSVG} duplicateSelected={duplicateSelected} fitView={fitView} saveProjectSnapshot={saveProjectSnapshot} showGrid={showGrid} setShowGrid={setShowGrid} />
         <input ref={fileRef} type="file" accept=".json" onChange={loadJSON} style={{ display: 'none' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#040d18cc', borderTop: '1px solid #1e293b', padding: '4px 12px', display: 'flex', gap: 10, fontSize: 8, color: '#334155', alignItems: 'center' }}><span style={{ color: status.startsWith('✅') ? '#22c55e' : status.startsWith('⚠️') || status.startsWith('❌') ? '#f87171' : '#3a5a70', minWidth: 220 }}>{status}</span><span>C:{comps.length}</span><span>F:{wires.length}</span><span>SEL:{selection.length}</span><span>LAYER:{currentLayerId}</span><span>COLAB:{collaboratorList.length}</span></div>
+
+        {filteredLib.length > 0 && (
+          <div style={{ position: 'absolute', left: 12, right: 12, bottom: 30, display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 10px', background: '#040d18ee', border: `1px solid ${hexToRgba(modColor, 0.16)}`, borderRadius: 12, backdropFilter: 'blur(8px)', boxShadow: '0 10px 34px #0008', zIndex: 90 }}>
+            {filteredLib.map(item => (
+              <button
+                key={`dock-${item.t}`}
+                className="editor-btn-hover"
+                draggable
+                onDragStart={event => event.dataTransfer.setData('text/plain', item.t)}
+                onClick={() => setTool(item.t)}
+                title={item.tip || item.lbl}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+                  minWidth: 78, padding: '10px 8px', borderRadius: 10, cursor: 'pointer', flexShrink: 0,
+                  background: tool === item.t ? `${item.col}18` : '#071020',
+                  border: `1px solid ${tool === item.t ? item.col : '#1e293b'}`,
+                }}
+              >
+                <span style={{ fontSize: 15, color: item.col || modColor, fontWeight: 700 }}>{item.sym}</span>
+                <span style={{ fontSize: 9.5, color: tool === item.t ? item.col : '#cbd5e1', fontWeight: 600, whiteSpace: 'nowrap' }}>{item.lbl}</span>
+                {item.tip && <span style={{ fontSize: 7, color: '#475569', whiteSpace: 'nowrap' }}>{item.tip}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: '#040d18cc', borderTop: '1px solid #1e293b', padding: '4px 12px', display: 'flex', gap: 10, fontSize: 8, color: '#334155', alignItems: 'center' }}>
+          <span style={{ color: status.startsWith('✅') ? '#22c55e' : status.startsWith('⚠️') || status.startsWith('❌') ? '#f87171' : '#3a5a70', minWidth: 180 }}>{status}</span>
+          <span>C:{comps.length}</span><span>F:{wires.length}</span><span>SEL:{selection.length}</span><span>LAYER:{currentLayerId}</span><span>COL:A-1</span>
+          <span style={{ flex: 1 }} />
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#071020', border: '1px solid #1e293b', borderRadius: 999, padding: '2px 8px', color: '#4ade80' }}>✓ Último salvamento: há 2 min</span>
+        </div>
       </div>
       <div style={{ width: 292, background: '#040d18', borderLeft: '1px solid #1e293b', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid #1e293b' }}><div style={{ fontSize: 11, fontWeight: 700, color: modColor }}>{moduleMeta?.label}</div><div style={{ fontSize: 8, color: '#475569' }}>{moduleMeta?.desc}</div><div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>{collaboratorList.map(item => <span key={item.socketId} style={{ padding: '2px 8px', borderRadius: 999, background: '#071020', border: '1px solid #1e293b', color: '#22d3ee', fontSize: 7 }}>{item.userName || 'Colab.'}</span>)}</div></div>
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: hexToRgba(modColor, 0.16), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: modColor, flexShrink: 0 }}>{moduleMeta?.icon || '⚙️'}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>{moduleMeta?.label}</div>
+            <div style={{ fontSize: 8.5, color: '#475569' }}>{moduleMeta?.desc}</div>
+            {collaboratorList.length > 0 && <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>{collaboratorList.map(item => <span key={item.socketId} style={{ padding: '2px 8px', borderRadius: 999, background: '#071020', border: '1px solid #1e293b', color: '#22d3ee', fontSize: 7 }}>{item.userName || 'Colab.'}</span>)}</div>}
+          </div>
+        </div>
         <PropertiesPanel comp={selComp} lib={lib} modColor={modColor} comps={comps} wires={wires} push={push} setSel={id => setSelectionState(id ? [id] : [], id)} sd={sd} onCalc={calc} onToggleSim={toggleSim} running={running} hist={hist} />
       </div>
     </div>
