@@ -68,6 +68,7 @@ export const APP_ICONS = {
   logout: 'solar:logout-2-linear',
   admin: 'solar:shield-user-linear',
   overview: 'solar:pie-chart-2-linear',
+  chevronRight: 'solar:alt-arrow-right-linear',
 };
 
 export function AppIcon({ name, icon, className = '' }) {
