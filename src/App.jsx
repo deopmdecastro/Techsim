@@ -6,59 +6,18 @@ import { Engine } from './components/Engine';
 import { AdminDashboard } from './components/AdminDashboard';
 import { IconRail } from './components/IconRail';
 import { AppIcon } from './components/ui/AppIcon';
+import { PageLayout, ThemeSwitch, UserChip } from './components/PageLayout';
+import { HomePage } from './components/HomePage';
+import { DataPage } from './components/DataPage';
+import { ModelsPage } from './components/ModelsPage';
+import { ReportsPage } from './components/ReportsPage';
+import { MediaPage } from './components/MediaPage';
+import { SettingsPage } from './components/SettingsPage';
 import { LIBS, MODS_ALL, MODULE_PRESETS, getModulePresets } from './data/modules';
 import { getCurrentUser, login, logout, refreshCurrentUser, register } from './services/auth';
 import { listProjectRecords, loadProjectRecord, saveProjectRecord } from './services/projects';
 import { backendConfig, isRemoteBackendEnabled } from './services/backend';
 import { useTheme } from './context/ThemeContext';
-
-function ThemeSwitch({ theme, toggleTheme }) {
-  const items = [
-    { id: 'light', label: 'Light', icon: 'themeLight' },
-    { id: 'dark', label: 'Dark', icon: 'themeDark' },
-  ];
-
-  return (
-    <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 p-1 shadow-[0_10px_30px_rgba(2,8,23,0.25)]">
-      {items.map(item => {
-        const active = theme === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => !active && toggleTheme()}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-              active
-                ? 'border border-violet-400/50 bg-violet-500/20 text-violet-100'
-                : 'border border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <AppIcon name={item.icon} className="h-4 w-4" />
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function UserChip({ user }) {
-  const name = user?.name || 'Convidado';
-  const initial = name.trim().charAt(0).toUpperCase() || '?';
-
-  return (
-    <button
-      type="button"
-      className="flex items-center gap-3 rounded-full border border-white/10 bg-slate-950/70 py-1.5 pl-1.5 pr-3 text-left shadow-[0_10px_30px_rgba(2,8,23,0.25)] transition hover:border-white/20"
-    >
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 via-rose-400 to-violet-500 text-sm font-bold text-white">
-        {initial}
-      </span>
-      <span className="text-sm font-semibold text-slate-100">{name.split(' ')[0]}</span>
-      <AppIcon name="down" className="h-4 w-4 text-slate-500" />
-    </button>
-  );
-}
 
 function WorkspaceHeader({ activeModule, openBlankModule, moduleOptions, theme, toggleTheme, user, onBack }) {
   const moduleMeta = moduleOptions.find(item => item.id === activeModule);
@@ -199,6 +158,14 @@ export default function App() {
     setPage('editor');
   }, []);
 
+  const openSpecificPreset = useCallback((moduleId, presetId) => {
+    const preset = getModulePresets(moduleId).find(item => item.id === presetId) || getModulePresets(moduleId)[0];
+    setActiveModule(moduleId);
+    setInitialProject(preset ? preset.project : null);
+    setEditorSeed(seed => seed + 1);
+    setPage('editor');
+  }, []);
+
   const openSavedProjectFromDashboard = useCallback(async (moduleId, projectId) => {
     setActiveModule(moduleId);
     if (!projectId) {
@@ -222,6 +189,12 @@ export default function App() {
 
   const handleLoadProjectById = useCallback(async projectId => loadProjectRecord(projectId), []);
 
+  const handleRailNavigate = useCallback(id => {
+    if (id === 'projects') { setPage('dashboard'); return; }
+    if (id === 'edit') { setPage('editor'); return; }
+    if (['home', 'data', 'models', 'reports', 'media', 'settings'].includes(id)) setPage(id);
+  }, []);
+
   if (page === 'landing') {
     return (
       <div className="techsim-shell">
@@ -238,7 +211,7 @@ export default function App() {
   if (page === 'dashboard') {
     return (
       <div className="techsim-shell flex h-screen overflow-hidden">
-        <IconRail active="projects" onNavigate={id => id === 'edit' && setPage('editor')} />
+        <IconRail active="projects" onNavigate={handleRailNavigate} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <header className="panel-glass mx-4 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[24px] px-5 py-4">
             <div className="flex items-center gap-4">
@@ -275,9 +248,57 @@ export default function App() {
     );
   }
 
+  if (page === 'home') {
+    return (
+      <PageLayout active="home" icon="home" title="Início" subtitle="O teu resumo do Techsim Platform" onNavigate={handleRailNavigate} theme={theme} toggleTheme={toggleTheme} user={user}>
+        <HomePage user={user} recentProjects={recentProjects} onOpenModule={openBlankModule} onOpenDashboard={() => setPage('dashboard')} />
+      </PageLayout>
+    );
+  }
+
+  if (page === 'data') {
+    return (
+      <PageLayout active="data" icon="data" title="Dados" subtitle="Projetos guardados em todos os módulos" onNavigate={handleRailNavigate} theme={theme} toggleTheme={toggleTheme} user={user}>
+        <DataPage recentProjects={recentProjects} onOpenModule={openSavedProjectFromDashboard} />
+      </PageLayout>
+    );
+  }
+
+  if (page === 'models') {
+    return (
+      <PageLayout active="models" icon="models" title="Modelos" subtitle="Templates prontos para todos os módulos" onNavigate={handleRailNavigate} theme={theme} toggleTheme={toggleTheme} user={user}>
+        <ModelsPage onUsePreset={openSpecificPreset} />
+      </PageLayout>
+    );
+  }
+
+  if (page === 'reports') {
+    return (
+      <PageLayout active="reports" icon="reports" title="Relatórios" subtitle="Estatísticas dos teus projetos" onNavigate={handleRailNavigate} theme={theme} toggleTheme={toggleTheme} user={user}>
+        <ReportsPage recentProjects={recentProjects} />
+      </PageLayout>
+    );
+  }
+
+  if (page === 'media') {
+    return (
+      <PageLayout active="media" icon="media" title="Mídia" subtitle="Biblioteca de símbolos SVG" onNavigate={handleRailNavigate} theme={theme} toggleTheme={toggleTheme} user={user}>
+        <MediaPage onOpenAdmin={() => setPage('admin')} />
+      </PageLayout>
+    );
+  }
+
+  if (page === 'settings') {
+    return (
+      <PageLayout active="settings" icon="settings" title="Configurações" subtitle="Conta, aparência e sistema" onNavigate={handleRailNavigate} theme={theme} toggleTheme={toggleTheme} user={user}>
+        <SettingsPage user={user} theme={theme} toggleTheme={toggleTheme} onLogout={handleLogout} onOpenAdmin={() => setPage('admin')} />
+      </PageLayout>
+    );
+  }
+
   return (
     <div className="techsim-shell flex h-screen overflow-hidden">
-      <IconRail active="edit" onNavigate={id => id === 'projects' && setPage('dashboard')} />
+      <IconRail active="edit" onNavigate={handleRailNavigate} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-4">
         <WorkspaceHeader
           activeModule={activeModule}
