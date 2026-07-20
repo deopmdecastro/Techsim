@@ -23,31 +23,38 @@ const pluralize = (count, singular, plural) => `${count} ${count === 1 ? singula
 
 function ModuleCard({ module, presetCount, projectCount, onOpenModule, onOpenPreset }) {
   return (
-    <div className="ts-card group relative flex h-full flex-col gap-4 overflow-hidden rounded-[26px] p-5" style={{ borderColor: hexToRgba(module.color, 0.22) }}>
+    <div
+      className="ts-card group relative flex h-full flex-col gap-4 overflow-hidden rounded-[26px] p-5"
+      style={{ borderColor: hexToRgba(module.color, 0.22) }}
+    >
       <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${module.color}, transparent)` }} />
       <div className="pointer-events-none absolute -right-10 top-0 h-28 w-28 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100" style={{ background: hexToRgba(module.color, 0.28) }} />
-      <div className="flex items-start justify-between gap-3">
+
+      <div className="relative flex items-start justify-between gap-3">
         <div className="flex gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-[26px]" style={{ background: `linear-gradient(180deg, ${hexToRgba(module.color, 0.3)}, ${hexToRgba(module.color, 0.05)})`, borderColor: hexToRgba(module.color, 0.36), color: module.color }}>
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-[26px] transition-transform duration-300 ease-out group-hover:scale-105 group-hover:-rotate-1"
+            style={{ background: `linear-gradient(180deg, ${hexToRgba(module.color, 0.3)}, ${hexToRgba(module.color, 0.05)})`, borderColor: hexToRgba(module.color, 0.36), color: module.color }}
+          >
             {module.icon}
           </div>
           <div className="min-w-0">
-            <div className="text-[15px] font-semibold" style={{ color: module.color }}>{module.label}</div>
-            <div className="mt-1 text-xs leading-6 text-[var(--text-soft)]">{module.desc}</div>
+            <div className="text-[15px] font-semibold tracking-tight" style={{ color: module.color }}>{module.label}</div>
+            <div className="mt-1 text-xs leading-6 text-[var(--text-dim)]">{module.desc}</div>
           </div>
         </div>
-        <span className="techsim-kicker">{pluralize(projectCount, 'base', 'bases')}</span>
+        <span className="techsim-kicker shrink-0">{pluralize(projectCount, 'base', 'bases')}</span>
       </div>
 
-      <p className="min-h-[48px] text-sm leading-7 text-[var(--text-soft)]">{module.docs}</p>
+      <p className="relative min-h-[48px] text-sm leading-7 text-[var(--text-soft)]">{module.docs}</p>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="relative flex flex-wrap gap-2">
         <span className="ts-pill" style={{ color: module.color, borderColor: hexToRgba(module.color, 0.28), background: hexToRgba(module.color, 0.12) }}>{pluralize(presetCount, 'preset', 'presets')}</span>
         <span className="ts-pill">{pluralize(projectCount, 'projeto', 'projetos')}</span>
       </div>
 
-      <div className="mt-auto flex flex-wrap gap-2 pt-2">
-        <button onClick={() => onOpenModule(module.id)} className="ts-btn rounded-full px-4 py-2.5 text-[10px]" style={{ background: `linear-gradient(135deg, ${module.color}, ${shiftHex(module.color, -0.12)})`, color: '#04030a' }}>ABRIR EDITOR</button>
+      <div className="relative mt-auto flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
+        <button onClick={() => onOpenModule(module.id)} className="ts-btn rounded-full px-4 py-2.5 text-[10px] shadow-[0_10px_24px_-8px_rgba(0,0,0,0.5)]" style={{ background: `linear-gradient(135deg, ${module.color}, ${shiftHex(module.color, -0.12)})`, color: '#04030a' }}>ABRIR EDITOR</button>
         <button onClick={() => onOpenPreset(module.id)} className="ts-btn rounded-full border px-4 py-2.5 text-[10px]" style={{ borderColor: hexToRgba(module.color, 0.36), color: module.color, background: hexToRgba(module.color, 0.08) }}>USAR PRESET</button>
         {module.wiki && (
           <a href={module.wiki} target="_blank" rel="noreferrer" className="ts-btn ts-btn-ghost inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[10px]">
@@ -95,12 +102,16 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
       <SectionHero
         eyebrow="Workspace"
         title={`Bem-vindo de volta, ${firstName}.`}
-        description="A nova UI do dashboard prioriza leitura rápida, módulos à frente e atalhos claros para iniciar, retomar e administrar projetos industriais."
+        description="Leitura rápida, módulos à frente e atalhos claros para iniciar, retomar e administrar projetos industriais — tudo num único cockpit."
         actions={(
           <>
             <button type="button" onClick={() => setActiveTab('modules')} className="ts-btn ts-btn-primary rounded-full px-5 py-3 text-[10px]">ABRIR MÓDULOS</button>
             <button type="button" onClick={() => setActiveTab('projects')} className="ts-btn ts-btn-ghost rounded-full px-5 py-3 text-[10px]">VER PROJETOS</button>
-            {isAdmin && <button type="button" onClick={onAdmin} className="ts-btn rounded-full border border-rose-400/30 bg-rose-500/10 px-5 py-3 text-[10px] text-rose-200">PAINEL ADMIN</button>}
+            {isAdmin && (
+              <button type="button" onClick={onAdmin} className="ts-btn rounded-full border border-rose-400/30 bg-rose-500/10 px-5 py-3 text-[10px] text-rose-200 transition hover:border-rose-400/50 hover:bg-rose-500/16">
+                PAINEL ADMIN
+              </button>
+            )}
           </>
         )}
         aside={(
@@ -112,9 +123,10 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="panel-glass editor-scroll flex min-h-0 flex-col gap-4 overflow-y-auto rounded-[28px] p-4">
-          <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+          <div className="relative overflow-hidden rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+            <div className="pointer-events-none absolute -right-6 -top-10 h-24 w-24 rounded-full bg-violet-500/12 blur-2xl" />
             <div className="eyebrow mb-2">Navegação</div>
-            <div className="text-lg font-semibold text-[var(--text)]">Cockpit do Techsim</div>
+            <div className="font-display text-lg font-semibold text-[var(--text)]">Cockpit do Techsim</div>
             <div className="mt-2 text-sm leading-7 text-[var(--text-soft)]">Troque entre módulos, projetos recentes e atalhos sem perder contexto do workspace.</div>
           </div>
 
@@ -122,8 +134,14 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
             {TABS.map(tab => {
               const active = activeTab === tab.id;
               return (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${active ? 'border-violet-400/45 bg-violet-500/16 text-violet-100' : 'border-white/8 bg-white/[0.02] text-[var(--text-soft)] hover:border-white/14 hover:text-[var(--text)]'}`}>
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${active ? 'bg-violet-500/16 text-violet-200' : 'bg-white/[0.03] text-[var(--text-dim)]'}`}>
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-200 ${active ? 'border-violet-400/45 bg-violet-500/16 text-violet-100 shadow-[0_10px_26px_-12px_rgba(139,92,246,0.55)]' : 'border-white/8 bg-white/[0.02] text-[var(--text-soft)] hover:border-white/14 hover:bg-white/[0.04] hover:text-[var(--text)]'}`}
+                >
+                  {active && <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-violet-400" />}
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-colors ${active ? 'bg-violet-500/20 text-violet-200' : 'bg-white/[0.03] text-[var(--text-dim)] group-hover:text-[var(--text-soft)]'}`}>
                     <AppIcon name={tab.icon} className="h-4 w-4" />
                   </span>
                   <span>{tab.label}</span>
@@ -148,17 +166,18 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
               {latestProjects.length ? latestProjects.map(project => {
                 const module = MODULES.find(item => item.id === project.moduleId);
                 return (
-                  <button key={project.id} type="button" onClick={() => onOpenModule(project.moduleId, project.id)} className="flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-black/15 px-3 py-3 text-left transition hover:border-white/14">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: hexToRgba(module?.color || '#8b5cf6', 0.16), color: module?.color || '#c4b5fd' }}>
+                  <button key={project.id} type="button" onClick={() => onOpenModule(project.moduleId, project.id)} className="group flex w-full items-center gap-3 rounded-2xl border border-white/8 bg-black/15 px-3 py-3 text-left transition-all duration-200 hover:border-white/16 hover:bg-black/25 hover:translate-x-0.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105" style={{ background: hexToRgba(module?.color || '#8b5cf6', 0.16), color: module?.color || '#c4b5fd' }}>
                       <AppIcon icon={module?.iconify} className="h-4 w-4" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-[var(--text)]">{project.name}</div>
                       <div className="truncate text-xs text-[var(--text-dim)]">{module?.label || project.moduleId}</div>
                     </div>
+                    <AppIcon name="chevronRight" className="h-3.5 w-3.5 shrink-0 text-[var(--text-dim)] opacity-0 transition-opacity group-hover:opacity-100" />
                   </button>
                 );
-              }) : <div className="rounded-2xl border border-dashed border-white/10 px-3 py-4 text-sm text-[var(--text-dim)]">Sem atividade recente.</div>}
+              }) : <div className="rounded-2xl border border-dashed border-white/10 px-3 py-4 text-center text-sm text-[var(--text-dim)]">Sem atividade recente.</div>}
             </div>
           </div>
 
@@ -174,14 +193,29 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <div className="eyebrow mb-2">Módulos e presets</div>
-                  <div className="font-display text-[30px] font-semibold leading-tight text-[var(--text)]">Entre rápido em cada disciplina</div>
+                  <div className="font-display text-[30px] font-semibold leading-tight tracking-tight text-[var(--text)]">Entre rápido em cada disciplina</div>
                   <div className="mt-2 text-sm text-[var(--text-soft)]">Cada módulo já nasce com presets prontos, ícones próprios e persistência de projeto.</div>
                 </div>
                 <div className="relative min-w-[260px] max-w-[320px] flex-1">
                   <AppIcon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-dim)]" />
-                  <input type="text" placeholder="Pesquisar módulo..." value={search} onChange={event => setSearch(event.target.value)} aria-label="Pesquisar módulo" className="techsim-input py-3 pl-10 pr-4 text-sm" />
+                  <input type="text" placeholder="Pesquisar módulo..." value={search} onChange={event => setSearch(event.target.value)} aria-label="Pesquisar módulo" className="techsim-input py-3 pl-10 pr-9 text-sm" />
+                  {search && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch('')}
+                      aria-label="Limpar pesquisa"
+                      className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-[var(--text-dim)] transition hover:bg-white/10 hover:text-[var(--text)]"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
+              {search && (
+                <div className="text-xs text-[var(--text-dim)]">
+                  {pluralize(filteredModules.length, 'resultado', 'resultados')} para <span className="text-[var(--text-soft)]">"{search}"</span>
+                </div>
+              )}
 
               {filteredModules.length ? (
                 <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
@@ -206,7 +240,7 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
             <div className="space-y-5">
               <div>
                 <div className="eyebrow mb-2">Projetos recentes</div>
-                <div className="font-display text-[30px] font-semibold text-[var(--text)]">Continue exatamente de onde parou</div>
+                <div className="font-display text-[30px] font-semibold tracking-tight text-[var(--text)]">Continue exatamente de onde parou</div>
                 <div className="mt-2 text-sm text-[var(--text-soft)]">Lista priorizada por atualização para reabrir bases e continuar a edição sem fricção.</div>
               </div>
               {!recentProjects.length ? (
@@ -216,9 +250,9 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
                   {recentProjects.map(project => {
                     const module = MODULES.find(item => item.id === project.moduleId);
                     return (
-                      <button key={project.id} onClick={() => onOpenModule(project.moduleId, project.id)} className="ts-card flex flex-wrap items-center justify-between gap-4 rounded-[24px] px-5 py-4 text-left" style={{ borderColor: hexToRgba(module?.color || '#8b5cf6', 0.18) }}>
+                      <button key={project.id} onClick={() => onOpenModule(project.moduleId, project.id)} className="ts-card group flex flex-wrap items-center justify-between gap-4 rounded-[24px] px-5 py-4 text-left" style={{ borderColor: hexToRgba(module?.color || '#8b5cf6', 0.18) }}>
                         <div className="flex min-w-0 items-center gap-4">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: hexToRgba(module?.color || '#8b5cf6', 0.16), color: module?.color || '#c4b5fd' }}>
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105" style={{ background: hexToRgba(module?.color || '#8b5cf6', 0.16), color: module?.color || '#c4b5fd' }}>
                             <AppIcon icon={module?.iconify} className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
@@ -229,7 +263,9 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="ts-pill" style={{ color: module?.color, borderColor: hexToRgba(module?.color || '#8b5cf6', 0.28), background: hexToRgba(module?.color || '#8b5cf6', 0.12) }}>{module?.label || project.moduleId}</span>
-                          <span className="mono text-xs text-[var(--text-dim)]">ABRIR →</span>
+                          <span className="mono flex items-center gap-1 text-xs text-[var(--text-dim)] transition-colors group-hover:text-[var(--text-soft)]">
+                            ABRIR <AppIcon name="chevronRight" className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                          </span>
                         </div>
                       </button>
                     );
@@ -243,7 +279,7 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
             <div className="space-y-5">
               <div>
                 <div className="eyebrow mb-2">Atalhos</div>
-                <div className="font-display text-[30px] font-semibold text-[var(--text)]">Fluxo de edição veloz</div>
+                <div className="font-display text-[30px] font-semibold tracking-tight text-[var(--text)]">Fluxo de edição veloz</div>
                 <div className="mt-2 text-sm text-[var(--text-soft)]">Os comandos mais usados do editor agora ficam visíveis num painel mais limpo e escaneável.</div>
               </div>
 
@@ -254,8 +290,8 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
               <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
                 {SHORTCUTS.map(([key, desc]) => (
                   <div key={key} className="ts-card flex items-center gap-3 rounded-[22px] px-4 py-4">
-                    <kbd className="mono rounded-xl border border-violet-400/22 bg-violet-500/10 px-2.5 py-1.5 text-[11px] text-violet-200">{key}</kbd>
-                    <span className="text-sm text-[var(--text-soft)]">{desc}</span>
+                    <kbd className="mono shrink-0 rounded-xl border border-violet-400/22 bg-violet-500/10 px-2.5 py-1.5 text-[11px] text-violet-200">{key}</kbd>
+                    <span className="text-sm leading-6 text-[var(--text-soft)]">{desc}</span>
                   </div>
                 ))}
               </div>

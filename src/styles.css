@@ -46,7 +46,10 @@
 
   --shadow-soft: 0 24px 60px rgba(4, 8, 20, 0.34);
   --shadow-card: 0 14px 34px rgba(2, 6, 18, 0.22);
+  --shadow-card-hover: 0 20px 46px rgba(2, 6, 18, 0.32), 0 0 0 1px rgba(139, 92, 246, 0.08);
+  --shadow-glow-violet: 0 0 0 1px rgba(139, 92, 246, 0.16), 0 18px 40px rgba(139, 92, 246, 0.16);
   --hero-mesh: radial-gradient(circle at 16% 18%, rgba(139, 92, 246, 0.28), transparent 30%), radial-gradient(circle at 86% 16%, rgba(34, 211, 238, 0.18), transparent 26%), radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.16), transparent 34%);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -124,10 +127,11 @@ button { cursor: pointer; }
 }
 
 .panel-glass {
+  position: relative;
   background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--panel-2) 86%, transparent));
   border: 1px solid var(--border);
   backdrop-filter: blur(22px) saturate(130%);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .workspace-card {
@@ -196,9 +200,11 @@ button { cursor: pointer; }
 
 .dashboard-blueprint {
   background-image:
+    radial-gradient(ellipse 120% 60% at 50% 0%, rgba(139, 92, 246, 0.05), transparent 60%),
     linear-gradient(rgba(139, 92, 246, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(139, 92, 246, 0.06) 1px, transparent 1px);
-  background-size: 34px 34px;
+  background-size: auto, 34px 34px, 34px 34px;
+  mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
 }
 
 /* ── Shared component primitives ─────────────────────────────── */
@@ -217,11 +223,14 @@ button { cursor: pointer; }
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: border-color 0.28s var(--ease-out), transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out), background 0.28s var(--ease-out);
+  will-change: transform;
 }
 .ts-card:hover {
   border-color: var(--border-strong);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-hover);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.016));
 }
 
 .ts-btn {
@@ -229,9 +238,9 @@ button { cursor: pointer; }
   font-weight: 600;
   letter-spacing: 0.14em;
   border-radius: var(--radius-sm);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out), border-color 0.18s var(--ease-out), background 0.18s var(--ease-out), color 0.18s var(--ease-out);
 }
-.ts-btn:active { transform: translateY(1px); }
+.ts-btn:active { transform: translateY(1px) scale(0.985); }
 
 .ts-btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
@@ -239,7 +248,7 @@ button { cursor: pointer; }
   border: 1px solid transparent;
   box-shadow: 0 10px 30px rgba(139, 92, 246, 0.28);
 }
-.ts-btn-primary:hover { box-shadow: 0 18px 44px rgba(139, 92, 246, 0.42); transform: translateY(-1px); }
+.ts-btn-primary:hover { box-shadow: 0 18px 44px rgba(139, 92, 246, 0.44); transform: translateY(-1px); filter: brightness(1.05); }
 
 .techsim-input {
   width: 100%;
@@ -249,8 +258,10 @@ button { cursor: pointer; }
   padding: 12px 16px;
   color: var(--text);
   outline: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
 }
+.techsim-input::placeholder { color: var(--text-dim); }
+.techsim-input:hover { border-color: color-mix(in srgb, var(--accent) 22%, var(--border)); }
 .techsim-input:focus {
   border-color: color-mix(in srgb, var(--accent) 44%, white);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
@@ -271,6 +282,7 @@ button { cursor: pointer; }
   filter: blur(28px);
   opacity: 0.7;
   pointer-events: none;
+  animation: orb-drift 9s ease-in-out infinite;
 }
 .techsim-orb-violet {
   right: -50px;
@@ -285,25 +297,48 @@ button { cursor: pointer; }
   height: 160px;
   width: 160px;
   background: radial-gradient(circle, rgba(34, 211, 238, 0.16), transparent 70%);
+  animation-delay: -4.5s;
+}
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-8px, 10px) scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .techsim-orb { animation: none; }
 }
 
 .techsim-stat-card {
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
   box-shadow: var(--shadow-card);
+  transition: border-color 0.28s var(--ease-out), transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out);
+}
+.techsim-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .techsim-kicker {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  padding: 4px 8px;
+  padding: 4px 9px 4px 7px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-dim);
   background: color-mix(in srgb, var(--surface) 68%, transparent);
+}
+.techsim-kicker::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 22%, transparent), 0 0 8px color-mix(in srgb, var(--success) 70%, transparent);
+  animation: pulse-glow 2.2s ease-in-out infinite;
 }
 
 .techsim-section-grid {
@@ -331,7 +366,7 @@ button { cursor: pointer; }
   color: var(--text-soft);
   border: 1px solid var(--border);
 }
-.ts-btn-ghost:hover { color: var(--text); border-color: var(--border-strong); }
+.ts-btn-ghost:hover { color: var(--text); border-color: var(--border-strong); background: color-mix(in srgb, var(--surface) 80%, transparent); transform: translateY(-1px); }
 
 .ts-pill {
   display: inline-flex;
@@ -346,6 +381,7 @@ button { cursor: pointer; }
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 70%, transparent);
   color: var(--text-soft);
+  transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out), color 0.2s var(--ease-out);
 }
 
 .trace-flow {
