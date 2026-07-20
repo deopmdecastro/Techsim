@@ -10,38 +10,43 @@
 */
 :root {
   color-scheme: dark;
-  --bg: #05060d;
-  --bg-muted: #090b16;
-  --panel: #0b0e1a;
-  --panel-2: #10131f;
-  --surface: #0c0f1c;
-  --surface-2: #121627;
-  --surface-3: #171c2f;
+  --bg: #040611;
+  --bg-muted: #090d1b;
+  --panel: rgba(11, 15, 29, 0.84);
+  --panel-2: rgba(16, 21, 39, 0.94);
+  --surface: #0d1222;
+  --surface-2: #13192e;
+  --surface-3: #1a213a;
 
   /* back-compat aliases used by some older components */
   --bg-elevated: var(--panel-2);
   --surface-border: var(--border);
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(139, 92, 246, 0.32);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(139, 92, 246, 0.34);
 
-  --text: #eef1fb;
-  --text-soft: #8b93b3;
-  --text-dim: #5f6889;
+  --text: #f7f8ff;
+  --text-soft: #99a3c7;
+  --text-dim: #697499;
 
   --accent: #8b5cf6;
-  --accent-2: #6366f1;
-  --accent-soft: rgba(139, 92, 246, 0.14);
+  --accent-2: #4f46e5;
+  --accent-3: #22d3ee;
+  --accent-soft: rgba(139, 92, 246, 0.16);
   --signal: #22d3ee;
 
   --success: #22c55e;
   --danger: #f43f5e;
   --warning: #f59e0b;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 26px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 30px;
+
+  --shadow-soft: 0 24px 60px rgba(4, 8, 20, 0.34);
+  --shadow-card: 0 14px 34px rgba(2, 6, 18, 0.22);
+  --hero-mesh: radial-gradient(circle at 16% 18%, rgba(139, 92, 246, 0.28), transparent 30%), radial-gradient(circle at 86% 16%, rgba(34, 211, 238, 0.18), transparent 26%), radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.16), transparent 34%);
 
   --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -50,32 +55,37 @@
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #eef1fb;
-  --bg-muted: #e6ebfa;
-  --panel: rgba(255, 255, 255, 0.94);
-  --panel-2: rgba(255, 255, 255, 0.99);
+  --bg: #eef2ff;
+  --bg-muted: #e8edff;
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-2: rgba(255, 255, 255, 0.95);
   --surface: #ffffff;
-  --surface-2: #f7f9ff;
-  --surface-3: #eef1fc;
+  --surface-2: #f8faff;
+  --surface-3: #eef2ff;
 
   --bg-elevated: var(--panel-2);
   --surface-border: var(--border);
 
-  --border: rgba(15, 23, 42, 0.1);
-  --border-strong: rgba(99, 102, 241, 0.3);
+  --border: rgba(15, 23, 42, 0.09);
+  --border-strong: rgba(99, 102, 241, 0.28);
 
-  --text: #10131f;
-  --text-soft: #4b5470;
-  --text-dim: #6b7490;
+  --text: #101528;
+  --text-soft: #4f5a79;
+  --text-dim: #75809c;
 
   --accent: #7c3aed;
-  --accent-2: #4f46e5;
+  --accent-2: #4338ca;
+  --accent-3: #0891b2;
   --accent-soft: rgba(124, 58, 237, 0.1);
   --signal: #0891b2;
 
   --success: #16a34a;
   --danger: #dc2626;
   --warning: #d97706;
+
+  --shadow-soft: 0 26px 60px rgba(107, 114, 128, 0.12);
+  --shadow-card: 0 14px 32px rgba(15, 23, 42, 0.08);
+  --hero-mesh: radial-gradient(circle at 16% 18%, rgba(124, 58, 237, 0.16), transparent 30%), radial-gradient(circle at 86% 16%, rgba(8, 145, 178, 0.14), transparent 26%), radial-gradient(circle at 50% 100%, rgba(67, 56, 202, 0.12), transparent 34%);
 }
 
 * { box-sizing: border-box; }
@@ -83,8 +93,9 @@ html, body, #root { min-height: 100%; margin: 0; }
 body {
   font-family: var(--font-body);
   background:
-    radial-gradient(circle at top left, rgba(99, 102, 241, 0.14), transparent 28%),
-    radial-gradient(circle at top right, rgba(139, 92, 246, 0.12), transparent 24%),
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.14), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.08), transparent 26%),
     var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
@@ -106,22 +117,23 @@ button { cursor: pointer; }
 .techsim-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(99, 102, 241, 0.1), transparent 22%),
+    var(--hero-mesh),
+    radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 22%),
     radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.08), transparent 18%),
     var(--bg);
 }
 
 .panel-glass {
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--panel-2) 86%, transparent));
   border: 1px solid var(--border);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 20px 50px rgba(2, 8, 23, 0.28);
+  backdrop-filter: blur(22px) saturate(130%);
+  box-shadow: var(--shadow-soft);
 }
 
 .workspace-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.012));
   border: 1px solid var(--border);
-  box-shadow: 0 12px 30px rgba(2, 8, 23, 0.18);
+  box-shadow: var(--shadow-card);
 }
 
 .workspace-grid {
@@ -201,11 +213,11 @@ button { cursor: pointer; }
 }
 
 .ts-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.008));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.012));
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 14px 34px rgba(2, 6, 18, 0.22);
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .ts-card:hover {
   border-color: var(--border-strong);
@@ -227,7 +239,92 @@ button { cursor: pointer; }
   border: 1px solid transparent;
   box-shadow: 0 10px 30px rgba(139, 92, 246, 0.28);
 }
-.ts-btn-primary:hover { box-shadow: 0 14px 40px rgba(139, 92, 246, 0.42); transform: translateY(-1px); }
+.ts-btn-primary:hover { box-shadow: 0 18px 44px rgba(139, 92, 246, 0.42); transform: translateY(-1px); }
+
+.techsim-input {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  padding: 12px 16px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.techsim-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 44%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 86%, transparent);
+}
+
+.techsim-hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent 36%, transparent 62%, rgba(34,211,238,0.06));
+  pointer-events: none;
+}
+
+.techsim-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(28px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.techsim-orb-violet {
+  right: -50px;
+  top: -40px;
+  height: 180px;
+  width: 180px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.26), transparent 68%);
+}
+.techsim-orb-cyan {
+  bottom: -65px;
+  left: -30px;
+  height: 160px;
+  width: 160px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.16), transparent 70%);
+}
+
+.techsim-stat-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+  box-shadow: var(--shadow-card);
+}
+
+.techsim-kicker {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+}
+
+.techsim-section-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.techsim-table-row {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.012));
+}
+
+.techsim-nav-shell {
+  background: linear-gradient(180deg, rgba(8, 12, 23, 0.9), rgba(7, 10, 18, 0.8));
+}
+
+.techsim-editor {
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.08), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(34, 211, 238, 0.06), transparent 24%),
+    #060913;
+}
 
 .ts-btn-ghost {
   background: color-mix(in srgb, var(--surface) 60%, transparent);
