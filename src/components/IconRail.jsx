@@ -105,7 +105,7 @@ export function IconRail({ active = 'edit', onNavigate }) {
           </button>
         </aside>
       ) : (
-        <aside className="techsim-nav-shell hidden h-full w-[112px] shrink-0 flex-col border-r border-white/8 px-3 py-4 transition-[width] duration-200 lg:flex">
+        <aside className="techsim-nav-shell hidden h-full w-[112px] shrink-0 flex-col border-r border-white/8 px-3 py-4 transition-[width] duration-200 lg:flex xl:w-[196px]">
           <button type="button" onClick={() => onNavigate?.('home')} className="rounded-[24px] border border-violet-400/28 bg-gradient-to-br from-violet-500/28 to-indigo-500/18 px-3 py-3 text-left shadow-[0_0_26px_rgba(124,58,237,0.18)]">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.05] text-white">

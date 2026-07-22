@@ -69,9 +69,10 @@ export const APP_ICONS = {
   admin: 'solar:shield-user-linear',
   overview: 'solar:pie-chart-2-linear',
   chevronRight: 'solar:alt-arrow-right-linear',
+  check: 'solar:check-read-linear',
 };
 
-export function AppIcon({ name, icon, className = '' }) {
+export function AppIcon({ name, icon, className = '', style }) {
   const resolved = icon || APP_ICONS[name] || 'solar:question-circle-linear';
-  return <Icon icon={resolved} className={className} aria-hidden="true" />;
+  return <Icon icon={resolved} className={className} style={style} aria-hidden="true" />;
 }
