@@ -102,6 +102,9 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const [dirtySinceSave, setDirtySinceSave] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [spacePan, setSpacePan] = useState(false);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowTick(Date.now()), 15000);
@@ -139,6 +142,56 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   }, [pan, zoom, snap]);
 
   const currentLayerId = activePage?.currentLayerId || activePage?.layers?.[0]?.id || 'layer-1';
+  const componentAnchors = useCallback(component => {
+    const horizontal = (component.r || 0) % 180 === 0;
+    const delta = G;
+    const anchors = [{ x: component.x, y: component.y, index: 0 }];
+    if (!['gnd', 'gnde', 'manm', 'prs', 'tc', 'osc', 'mtr', 'watt', 'phasem', 'pump', 'comp', 'cyl', 'cylse', 'cylh'].includes(component.t)) {
+      anchors.push(horizontal ? { x: component.x - delta, y: component.y, index: 1 } : { x: component.x, y: component.y - delta, index: 1 });
+      anchors.push(horizontal ? { x: component.x + delta, y: component.y, index: 2 } : { x: component.x, y: component.y + delta, index: 2 });
+    }
+    return anchors;
+  }, []);
+  const snapToNearestAnchor = useCallback((point, maxDist = G * 1.15) => {
+    let best = null;
+    visibleComps.forEach(component => {
+      componentAnchors(component).forEach(anchor => {
+        const dist = Math.hypot(anchor.x - point.x, anchor.y - point.y);
+        if (dist <= maxDist && (!best || dist < best.dist)) best = { ...anchor, dist, componentId: component.id };
+      });
+    });
+    return best ? { x: best.x, y: best.y, anchor: best } : point;
+  }, [visibleComps, componentAnchors]);
+  const findWireHandle = useCallback((wx, wy) => {
+    const threshold = Math.max(10 / zoom, G * 0.32);
+    for (const wire of visibleWires) {
+      if (Math.hypot(wire.x1 - wx, wire.y1 - wy) <= threshold) return { wireId: wire.id, endpoint: 'start' };
+      if (Math.hypot(wire.x2 - wx, wire.y2 - wy) <= threshold) return { wireId: wire.id, endpoint: 'end' };
+    }
+    return null;
+  }, [visibleWires, zoom]);
+  const moveConnectedWiresWithSelection = useCallback((baseComps, baseWires, movedIds, dx, dy) => {
+    const movedCompIds = new Set(movedIds.filter(id => baseComps.some(component => component.id === id)));
+    if (!movedCompIds.size) return baseWires;
+    const anchorPairs = [];
+    baseComps.forEach(component => {
+      if (!movedCompIds.has(component.id)) return;
+      const before = componentAnchors(component);
+      const after = componentAnchors({ ...component, x: component.x + dx, y: component.y + dy });
+      before.forEach((anchor, index) => {
+        anchorPairs.push({ from: anchor, to: after[index] || anchor });
+      });
+    });
+    return baseWires.map(wire => {
+      if (movedIds.includes(wire.id)) return wire;
+      let next = wire;
+      anchorPairs.forEach(({ from, to }) => {
+        if (Math.hypot(next.x1 - from.x, next.y1 - from.y) < 1) next = { ...next, x1: to.x, y1: to.y };
+        if (Math.hypot(next.x2 - from.x, next.y2 - from.y) < 1) next = { ...next, x2: to.x, y2: to.y };
+      });
+      return next;
+    });
+  }, [componentAnchors]);
   const buildProjectData = useCallback(() => ({
     activePageId,
     viewMode,
@@ -325,25 +378,116 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
   const onWheel = useCallback(event => { event.preventDefault(); const rect = cvRef.current.getBoundingClientRect(); const cx = event.clientX - rect.left, cy = event.clientY - rect.top, factor = event.deltaY < 0 ? 1.12 : 0.9, nextZoom = Math.min(5, Math.max(0.1, zoom * factor)); setPan(current => ({ x: cx - (cx - current.x) * (nextZoom / zoom), y: cy - (cy - current.y) * (nextZoom / zoom) })); setZoom(nextZoom); }, [zoom]);
   useEffect(() => { const cv = cvRef.current; if (!cv) return undefined; cv.addEventListener('wheel', onWheel, { passive: false }); return () => cv.removeEventListener('wheel', onWheel); }, [onWheel]);
   const onDown = useCallback(event => {
-    const rect = cvRef.current.getBoundingClientRect(); const cx = event.clientX - rect.left, cy = event.clientY - rect.top; panStart.current = { mx: cx, my: cy, px: pan.x, py: pan.y }; if (event.button === 1 || event.button === 2) { isPan.current = true; return; }
-    const raw = worldFromCanvas(cx, cy, false); const pos = worldFromCanvas(cx, cy, true);
+    const rect = cvRef.current.getBoundingClientRect();
+    const cx = event.clientX - rect.left;
+    const cy = event.clientY - rect.top;
+    panStart.current = { mx: cx, my: cy, px: pan.x, py: pan.y };
+    if (event.button === 1 || event.button === 2 || spacePan) { isPan.current = true; return; }
+    const raw = worldFromCanvas(cx, cy, false);
+    const pos = worldFromCanvas(cx, cy, true);
     if (tool === 'select') {
-      const component = hitComp(raw.x, raw.y); const wire = component ? null : hitWire(raw.x, raw.y); const hitId = component?.id || wire?.id;
-      if (hitId) {
-        const nextSelection = event.shiftKey ? (selection.includes(hitId) ? selection.filter(id => id !== hitId) : [...selection, hitId]) : (selection.includes(hitId) ? selection : [hitId]);
-        setSelectionState(nextSelection, hitId); const idsForDrag = nextSelection.length ? nextSelection : [hitId]; dragSelection.current = { from: { comps: deepClone(comps), wires: deepClone(wires) }, world: pos, ids: idsForDrag }; selectionChangedByDrag.current = false; return;
+      const wireHandle = findWireHandle(raw.x, raw.y);
+      if (wireHandle) {
+        setSelectionState([wireHandle.wireId], wireHandle.wireId);
+        dragSelection.current = { type: 'wireHandle', from: { comps: deepClone(comps), wires: deepClone(wires) }, wireId: wireHandle.wireId, endpoint: wireHandle.endpoint };
+        selectionChangedByDrag.current = false;
+        return;
       }
-      if (event.shiftKey) { setMarquee({ x1: raw.x, y1: raw.y, x2: raw.x, y2: raw.y, keep: true }); return; }
-      isPan.current = true; setSelectionState([]); return;
-    }
-    if (tool === 'wire') {
-      if (!wStart) { setWStart(pos); setStatus('Clique no destino do fio'); } else { let ex = pos.x, ey = pos.y; if (ortho) { if (Math.abs(ex - wStart.x) > Math.abs(ey - wStart.y)) ey = wStart.y; else ex = wStart.x; } push({ comps, wires: [...wires, { id: uid(), x1: wStart.x, y1: wStart.y, x2: ex, y2: ey, color: wireColor, layerId: currentLayerId }] }); setWStart({ x: ex, y: ey }); }
+      const component = hitComp(raw.x, raw.y);
+      const wire = component ? null : hitWire(raw.x, raw.y);
+      const hitId = component?.id || wire?.id;
+      if (hitId) {
+        const nextSelection = event.shiftKey
+          ? (selection.includes(hitId) ? selection.filter(id => id !== hitId) : [...selection, hitId])
+          : (selection.includes(hitId) ? selection : [hitId]);
+        setSelectionState(nextSelection, hitId);
+        const idsForDrag = nextSelection.length ? nextSelection : [hitId];
+        dragSelection.current = { from: { comps: deepClone(comps), wires: deepClone(wires) }, world: pos, ids: idsForDrag };
+        selectionChangedByDrag.current = false;
+        return;
+      }
+      setMarquee({ x1: raw.x, y1: raw.y, x2: raw.x, y2: raw.y, keep: event.shiftKey });
+      if (!event.shiftKey) setSelectionState([]);
       return;
     }
-    if (tool === 'delete') { const component = hitComp(raw.x, raw.y); const wire = component ? null : hitWire(raw.x, raw.y); if (component || wire) { const ids = selection.length && selection.includes((component || wire).id) ? selection : [(component || wire).id]; push({ comps: comps.filter(item => !ids.includes(item.id)), wires: wires.filter(item => !ids.includes(item.id)) }); setSelectionState([]); } return; }
+    if (tool === 'wire') {
+      const snapped = snapToNearestAnchor(pos);
+      if (!wStart) {
+        setWStart(snapped);
+        setStatus(snapped.anchor ? 'Origem ancorada · clique no destino do fio' : 'Clique no destino do fio');
+      } else {
+        let ex = snapped.x;
+        let ey = snapped.y;
+        if (ortho) {
+          if (Math.abs(ex - wStart.x) > Math.abs(ey - wStart.y)) ey = wStart.y;
+          else ex = wStart.x;
+        }
+        push({ comps, wires: [...wires, { id: uid(), x1: wStart.x, y1: wStart.y, x2: ex, y2: ey, color: wireColor, layerId: currentLayerId }] });
+        setWStart({ x: ex, y: ey });
+        setStatus(snapped.anchor ? 'Fio conectado ao ponto mais próximo' : 'Extremidade pronta para continuar ligando');
+      }
+      return;
+    }
+    if (tool === 'delete') {
+      const component = hitComp(raw.x, raw.y);
+      const wire = component ? null : hitWire(raw.x, raw.y);
+      if (component || wire) {
+        const ids = selection.length && selection.includes((component || wire).id) ? selection : [(component || wire).id];
+        push({ comps: comps.filter(item => !ids.includes(item.id)), wires: wires.filter(item => !ids.includes(item.id)) });
+        setSelectionState([]);
+      }
+      return;
+    }
     placeComponent(tool, pos);
-  }, [pan, worldFromCanvas, tool, hitComp, hitWire, selection, setSelectionState, comps, wires, ortho, wStart, wireColor, currentLayerId, push, setStatus, placeComponent]);
-  const onMove = useCallback(event => { const rect = cvRef.current.getBoundingClientRect(); const cx = event.clientX - rect.left, cy = event.clientY - rect.top; setMouse({ x: cx, y: cy }); if (isPan.current) { setPan({ x: panStart.current.px + cx - panStart.current.mx, y: panStart.current.py + cy - panStart.current.my }); return; } if (marquee) { const raw = worldFromCanvas(cx, cy, false); setMarquee(current => current ? { ...current, x2: raw.x, y2: raw.y } : null); return; } if (dragSelection.current) { const pos = worldFromCanvas(cx, cy, true); const dx = pos.x - dragSelection.current.world.x, dy = pos.y - dragSelection.current.world.y; if (!dx && !dy) return; selectionChangedByDrag.current = true; dispatch({ type: 'SET', p: { comps: dragSelection.current.from.comps.map(item => dragSelection.current.ids.includes(item.id) ? { ...item, x: item.x + dx, y: item.y + dy } : item), wires: dragSelection.current.from.wires.map(item => dragSelection.current.ids.includes(item.id) ? { ...item, x1: item.x1 + dx, y1: item.y1 + dy, x2: item.x2 + dx, y2: item.y2 + dy } : item) } }); } }, [marquee, worldFromCanvas]);
+  }, [pan, worldFromCanvas, tool, hitComp, hitWire, selection, setSelectionState, comps, wires, ortho, wStart, wireColor, currentLayerId, push, setStatus, placeComponent, snapToNearestAnchor, findWireHandle, spacePan]);
+  const onMove = useCallback(event => {
+    const rect = cvRef.current.getBoundingClientRect();
+    const cx = event.clientX - rect.left;
+    const cy = event.clientY - rect.top;
+    setMouse({ x: cx, y: cy });
+    if (isPan.current) {
+      setPan({ x: panStart.current.px + cx - panStart.current.mx, y: panStart.current.py + cy - panStart.current.my });
+      return;
+    }
+    if (marquee) {
+      const raw = worldFromCanvas(cx, cy, false);
+      setMarquee(current => current ? { ...current, x2: raw.x, y2: raw.y } : null);
+      return;
+    }
+    if (dragSelection.current?.type === 'wireHandle') {
+      const snapped = snapToNearestAnchor(worldFromCanvas(cx, cy, true));
+      selectionChangedByDrag.current = true;
+      dispatch({
+        type: 'SET',
+        p: {
+          comps: dragSelection.current.from.comps,
+          wires: dragSelection.current.from.wires.map(wire => {
+            if (wire.id !== dragSelection.current.wireId) return wire;
+            return dragSelection.current.endpoint === 'start'
+              ? { ...wire, x1: snapped.x, y1: snapped.y }
+              : { ...wire, x2: snapped.x, y2: snapped.y };
+          }),
+        },
+      });
+      return;
+    }
+    if (dragSelection.current) {
+      const pos = worldFromCanvas(cx, cy, true);
+      const dx = pos.x - dragSelection.current.world.x;
+      const dy = pos.y - dragSelection.current.world.y;
+      if (!dx && !dy) return;
+      selectionChangedByDrag.current = true;
+      const movedComps = dragSelection.current.from.comps.map(item => dragSelection.current.ids.includes(item.id) ? { ...item, x: item.x + dx, y: item.y + dy } : item);
+      const movedWires = moveConnectedWiresWithSelection(
+        dragSelection.current.from.comps,
+        dragSelection.current.from.wires.map(item => dragSelection.current.ids.includes(item.id) ? { ...item, x1: item.x1 + dx, y1: item.y1 + dy, x2: item.x2 + dx, y2: item.y2 + dy } : item),
+        dragSelection.current.ids,
+        dx,
+        dy,
+      );
+      dispatch({ type: 'SET', p: { comps: movedComps, wires: movedWires } });
+    }
+  }, [marquee, worldFromCanvas, snapToNearestAnchor, moveConnectedWiresWithSelection]);
   const onUp = useCallback(() => { isPan.current = false; if (marquee) { const rect = { left: Math.min(marquee.x1, marquee.x2), right: Math.max(marquee.x1, marquee.x2), top: Math.min(marquee.y1, marquee.y2), bottom: Math.max(marquee.y1, marquee.y2) }; const ids = [...visibleComps.filter(component => boundsInsideRect(componentBounds(component), rect)).map(component => component.id), ...visibleWires.filter(wire => boundsInsideRect(wireBounds(wire), rect)).map(wire => wire.id)]; setSelectionState(marquee.keep ? [...selection, ...ids] : ids, ids[0]); setMarquee(null); } if (dragSelection.current) { if (selectionChangedByDrag.current) dispatch({ type: 'COMMIT', from: dragSelection.current.from }); dragSelection.current = null; } }, [marquee, visibleComps, visibleWires, setSelectionState, selection]);
 
   useEffect(() => {
@@ -354,7 +498,8 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
       if (!inField && event.key === '/') { event.preventDefault(); paletteSearchRef.current?.focus(); return; }
       if (!inField && event.key === '?') { event.preventDefault(); setShowShortcuts(value => !value); return; }
       if (inField) return;
-      if (ctrl && event.key === 'z') { event.preventDefault(); dispatch({ type: 'UNDO' }); }
+      if (ctrl && event.key.toLowerCase() === 'a') { event.preventDefault(); setSelectionState([...visibleComps.map(component => component.id), ...visibleWires.map(wire => wire.id)]); }
+      else if (ctrl && event.key === 'z') { event.preventDefault(); dispatch({ type: 'UNDO' }); }
       else if (ctrl && event.key === 'y') { event.preventDefault(); dispatch({ type: 'REDO' }); }
       else if (ctrl && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicateSelected(); }
       else if (ctrl && event.key.toLowerCase() === 'g') { event.preventDefault(); groupSelection(); }
@@ -362,14 +507,30 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
       else if (event.key === 'Delete') { deleteSelection(); }
       else if (event.key === 'F9') { event.preventDefault(); calc(); }
       else if (event.key === 'F5') { event.preventDefault(); toggleSim(); }
-      else if (event.key === 'Escape') { setWStart(null); setSelectionState([]); setMarquee(null); setShowShortcuts(false); }
+      else if (event.key === 'Escape') { setWStart(null); setSelectionState([]); setMarquee(null); setShowShortcuts(false); setLeftPanelOpen(false); setRightPanelOpen(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [duplicateSelected, groupSelection, ungroupSelection, deleteSelection, calc, toggleSim, setSelectionState, saveProjectSnapshot]);
+  }, [duplicateSelected, groupSelection, ungroupSelection, deleteSelection, calc, toggleSim, setSelectionState, saveProjectSnapshot, visibleComps, visibleWires]);
+
+  useEffect(() => {
+    const down = event => {
+      if (['INPUT', 'TEXTAREA'].includes(event.target.tagName)) return;
+      if (event.code === 'Space') { event.preventDefault(); setSpacePan(true); }
+    };
+    const up = event => { if (event.code === 'Space') setSpacePan(false); };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, []);
   return (
-    <div className="techsim-editor flex h-full overflow-hidden rounded-[28px] border border-white/8 bg-[#060913] shadow-[0_30px_90px_rgba(2,8,23,0.45)]">
-      <aside className="editor-scroll flex w-[286px] min-h-0 shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-r border-white/6 bg-[#090d18] px-4 py-4">
+    <div className="techsim-editor relative flex h-full overflow-hidden rounded-[28px] border border-white/8 bg-[#060913] shadow-[0_30px_90px_rgba(2,8,23,0.45)]">
+      {leftPanelOpen && <button type="button" aria-label="Fechar painel esquerdo" onClick={() => setLeftPanelOpen(false)} className="absolute inset-0 z-[129] bg-black/45 xl:hidden" />}
+      {rightPanelOpen && <button type="button" aria-label="Fechar painel direito" onClick={() => setRightPanelOpen(false)} className="absolute inset-0 z-[129] bg-black/45 xl:hidden" />}
+      <aside className={`editor-scroll absolute inset-y-0 left-0 z-[140] flex w-[286px] min-h-0 shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-r border-white/6 bg-[#090d18] px-4 py-4 transition-transform duration-300 xl:static xl:z-auto xl:translate-x-0 ${leftPanelOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}`}>
         <div className="workspace-card rounded-[24px] p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-white shadow-[0_0_24px_rgba(139,92,246,0.18)]" style={{ background: `linear-gradient(135deg, ${hexToRgba(modColor, 0.28)}, rgba(99,102,241,0.15))` }}>
@@ -582,9 +743,18 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
       </aside>
 
       <main className={`relative flex min-w-0 flex-1 flex-col overflow-hidden ${viewMode === '3d' ? 'bg-[#050814]' : 'bg-[#060914]'}`}>
+        <div className="xl:hidden relative z-[120] flex items-center justify-between gap-2 border-b border-white/6 bg-[#070a12]/75 px-3 py-2.5 backdrop-blur-xl">
+          <button type="button" onClick={() => setLeftPanelOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-2 text-xs font-medium text-slate-200">
+            <AppIcon name="module" className="h-4 w-4" /> Ferramentas
+          </button>
+          <div className="mono text-[11px] text-slate-400">{selection.length} selecionado(s) · {tool === 'wire' ? 'Ligação assistida' : 'Canvas'}</div>
+          <button type="button" onClick={() => setRightPanelOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-2 text-xs font-medium text-slate-200">
+            <AppIcon name="results" className="h-4 w-4" /> Propriedades
+          </button>
+        </div>
         {/* Toolbar row — sits above the canvas in normal flow, never overlapping it */}
         <div className="relative z-[100] shrink-0 border-b border-white/6 bg-[#070a12]/60 px-3 py-3 backdrop-blur-xl">
-          <Toolbar tool={tool} setTool={setTool} sel={primaryId} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={id => setSelectionState(id ? [id] : [], id)} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={rotateSelected} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={() => push({ comps: comps.map((component, index) => ({ ...component, x: G * 3 + (index % 5) * G * 3, y: G * 3 + Math.floor(index / 5) * G * 3 })), wires })} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} exportSVG={exportSVG} duplicateSelected={duplicateSelected} fitView={fitView} saveProjectSnapshot={saveProjectSnapshot} showGrid={showGrid} setShowGrid={setShowGrid} />
+          <Toolbar tool={tool} setTool={setTool} sel={primaryId} selComp={selComp} selWire={selWire} modColor={modColor} running={running} snap={snap} ortho={ortho} zoom={zoom} hist={hist} comps={comps} wires={wires} push={push} dispatch={dispatch} setSel={id => setSelectionState(id ? [id] : [], id)} setSnap={setSnap} setOrtho={setOrtho} setZoom={setZoom} setPan={setPan} doRot={rotateSelected} calc={calc} toggleSim={toggleSim} saveJSON={saveJSON} fileRef={fileRef} clearAll={clearAll} autoLayout={() => push({ comps: comps.map((component, index) => ({ ...component, x: G * 3 + (index % 5) * G * 3, y: G * 3 + Math.floor(index / 5) * G * 3 })), wires })} modId={modId} wireColor={wireColor} setWireColor={setWireColor} viewMode={viewMode} setViewMode={setViewMode} exportPNG={exportPNG} exportSVG={exportSVG} duplicateSelected={duplicateSelected} fitView={fitView} saveProjectSnapshot={saveProjectSnapshot} showGrid={showGrid} setShowGrid={setShowGrid} selectionCount={selection.length} groupSelection={groupSelection} ungroupSelection={ungroupSelection} deleteSelection={deleteSelection} />
           <input ref={fileRef} type="file" accept=".json" onChange={loadJSON} style={{ display: 'none' }} />
         </div>
 
@@ -602,7 +772,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
         >
           <canvas
             ref={cvRef}
-            style={{ display: 'block', width: '100%', height: '100%', cursor: isPan.current ? 'grabbing' : tool === 'wire' ? 'crosshair' : 'default' }}
+            style={{ display: 'block', width: '100%', height: '100%', cursor: isPan.current || spacePan ? 'grabbing' : tool === 'wire' ? 'crosshair' : marquee ? 'crosshair' : 'default' }}
             onMouseDown={onDown}
             onMouseMove={onMove}
             onMouseUp={onUp}
@@ -638,6 +808,23 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
             );
           })()}
           {marquee && <div style={{ position: 'absolute', left: (Math.min(marquee.x1, marquee.x2) * zoom) + pan.x, top: (Math.min(marquee.y1, marquee.y2) * zoom) + pan.y, width: Math.abs(marquee.x2 - marquee.x1) * zoom, height: Math.abs(marquee.y2 - marquee.y1) * zoom, border: '1px dashed #8b5cf6', background: 'rgba(139,92,246,0.12)', pointerEvents: 'none' }} />}
+
+          <div className="pointer-events-none absolute left-3 top-9 z-[85] flex max-w-[calc(100%-24px)] flex-wrap gap-2">
+            {selection.length > 1 && (
+              <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-[20px] border border-white/10 bg-[#070a12]/88 px-3 py-2 shadow-[0_18px_40px_rgba(2,8,23,0.35)] backdrop-blur-xl">
+                <span className="mono text-[11px] text-slate-400">{selection.length} itens</span>
+                <button type="button" onClick={groupSelection} className="rounded-full border border-violet-400/30 bg-violet-500/14 px-3 py-1.5 text-xs font-medium text-violet-100">Agrupar</button>
+                <button type="button" onClick={ungroupSelection} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-slate-200">Desagrupar</button>
+                <button type="button" onClick={duplicateSelected} className="rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200">Duplicar</button>
+                <button type="button" onClick={deleteSelection} className="rounded-full border border-rose-400/25 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-200">Excluir</button>
+              </div>
+            )}
+            {tool === 'wire' && (
+              <div className="rounded-[20px] border border-cyan-400/15 bg-cyan-500/10 px-3 py-2 text-xs leading-6 text-cyan-100 shadow-[0_18px_40px_rgba(2,8,23,0.24)] backdrop-blur-xl">
+                Fio com snap inteligente · clique perto dos terminais para ancorar automaticamente
+              </div>
+            )}
+          </div>
 
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[80] border-t border-white/8 bg-[#070a12]/90 px-4 py-2 backdrop-blur-xl">
             <div className="flex items-center gap-4 text-xs text-slate-500">
@@ -740,7 +927,7 @@ export function Engine({ modId, modColor, lib, userName, modulePresets = [], sav
         )}
       </main>
 
-      <aside className="flex w-[344px] min-h-0 shrink-0 flex-col overflow-hidden border-l border-white/6 bg-[#090d18]">
+      <aside className={`absolute inset-y-0 right-0 z-[140] flex w-[min(344px,100%)] min-h-0 shrink-0 flex-col overflow-hidden border-l border-white/6 bg-[#090d18] transition-transform duration-300 xl:static xl:w-[344px] xl:translate-x-0 ${rightPanelOpen ? 'translate-x-0' : 'translate-x-full xl:translate-x-0'}`}>
         <div className="border-b border-white/6 px-5 py-4">
           <div className="flex items-start gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-white" style={{ background: `linear-gradient(135deg, ${hexToRgba(modColor, 0.28)}, rgba(99,102,241,0.15))` }}>
