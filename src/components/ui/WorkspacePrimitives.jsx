@@ -2,18 +2,18 @@ import { AppIcon } from './AppIcon';
 
 export function SectionHero({ eyebrow, title, description, actions, aside, className = '' }) {
   return (
-    <section className={`panel-glass techsim-hero-card relative overflow-hidden rounded-[30px] p-6 sm:p-7 ${className}`}>
+    <section className={`panel-glass techsim-hero-card relative overflow-hidden rounded-[26px] p-4 sm:p-5 ${className}`}>
       <div className="techsim-orb techsim-orb-violet" aria-hidden="true" />
       <div className="techsim-orb techsim-orb-cyan" aria-hidden="true" />
-      <div className="relative z-[1] grid gap-7 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
+      <div className="relative z-[1] grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-center">
         <div>
-          {eyebrow && <div className="eyebrow mb-3">{eyebrow}</div>}
-          <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight text-[var(--text)] sm:text-3xl">{title}</h1>
-          {description && <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)] sm:text-[15px]">{description}</p>}
-          {actions && <div className="mt-6 flex flex-wrap gap-3">{actions}</div>}
+          {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
+          <h1 className="font-display text-xl font-semibold leading-tight tracking-tight text-[var(--text)] sm:text-[26px]">{title}</h1>
+          {description && <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[var(--text-soft)] sm:text-sm">{description}</p>}
+          {actions && <div className="mt-4 flex flex-wrap gap-2.5">{actions}</div>}
         </div>
         {aside ? (
-          <div className="relative z-[1] lg:border-l lg:border-[var(--border)] lg:pl-6">
+          <div className="relative z-[1] lg:border-l lg:border-[var(--border)] lg:pl-5">
             {aside}
           </div>
         ) : null}
@@ -25,7 +25,7 @@ export function SectionHero({ eyebrow, title, description, actions, aside, class
 export function MetricCard({ icon, label, value, hint, color = 'var(--accent)', compact = false }) {
   return (
     <div
-      className={`techsim-stat-card group relative overflow-hidden rounded-[24px] border p-4 ${compact ? 'min-h-[120px]' : 'min-h-[138px]'}`}
+      className={`techsim-stat-card group relative overflow-hidden rounded-2xl border p-3.5 ${compact ? 'min-h-[92px]' : 'min-h-[138px]'}`}
       style={{ borderColor: `color-mix(in srgb, ${color} 26%, var(--border))` }}
     >
       <div
@@ -33,14 +33,14 @@ export function MetricCard({ icon, label, value, hint, color = 'var(--accent)', 
         style={{ background: `color-mix(in srgb, ${color} 30%, transparent)` }}
       />
       <div className="relative flex items-start justify-between gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-105" style={{ color, borderColor: `color-mix(in srgb, ${color} 35%, transparent)`, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
-          <AppIcon name={icon} className="h-5 w-5" />
+        <div className={`flex items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-105 ${compact ? 'h-9 w-9' : 'h-11 w-11'}`} style={{ color, borderColor: `color-mix(in srgb, ${color} 35%, transparent)`, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
+          <AppIcon name={icon} className={compact ? 'h-4 w-4' : 'h-5 w-5'} />
         </div>
-        <span className="techsim-kicker">live</span>
+        {!compact && <span className="techsim-kicker">live</span>}
       </div>
-      <div className="relative mt-5 font-display text-2xl font-semibold tracking-tight text-[var(--text)] tabular-nums">{value}</div>
-      <div className="relative mt-1 text-sm font-medium text-[var(--text-soft)]">{label}</div>
-      {hint ? <div className="relative mt-3 text-xs leading-6 text-[var(--text-dim)]">{hint}</div> : null}
+      <div className={`relative font-display font-semibold tracking-tight text-[var(--text)] tabular-nums ${compact ? 'mt-3 text-xl' : 'mt-5 text-2xl'}`}>{value}</div>
+      <div className={`relative font-medium text-[var(--text-soft)] ${compact ? 'mt-0.5 text-xs' : 'mt-1 text-sm'}`}>{label}</div>
+      {hint && !compact ? <div className="relative mt-3 text-xs leading-6 text-[var(--text-dim)]">{hint}</div> : null}
     </div>
   );
 }
