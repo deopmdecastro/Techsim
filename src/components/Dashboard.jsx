@@ -114,11 +114,6 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
             )}
           </>
         )}
-        aside={(
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            {stats.slice(0, 2).map(item => <MetricCard key={item.label} icon={item.icon} label={item.label} value={item.value} hint={item.hint} color={item.color} compact />)}
-          </div>
-        )}
       />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
