@@ -15,7 +15,7 @@ const WORKFLOWS = [
 const HIGHLIGHTS = [
   { icon: 'live', title: 'Simulação em tempo real', copy: 'Feedback imediato de estados energizados, métricas e diagnóstico lógico.' },
   { icon: 'layersPanel', title: 'Projetos escaláveis', copy: 'Camadas, páginas, agrupamentos e colaboração preparados para fluxos maiores.' },
-  { icon: 'reports', title: 'Base profissional', copy: 'UI em modo claro/escuro, biblioteca industrial e backend pronto para crescer.' },
+  { icon: 'reports', title: 'Pronto para produção', copy: 'Modo claro/escuro, biblioteca de símbolos industrial e backend próprio, prontos desde o primeiro projeto.' },
 ];
 
 export function LandingPage({ onLogin, onRegister }) {
@@ -69,12 +69,11 @@ export function LandingPage({ onLogin, onRegister }) {
                 <span className="h-2 w-2 rounded-full bg-cyan-300 pulse-dot" />
                 Plataforma industrial completa
               </div>
-              <h1 className="font-display max-w-3xl text-[clamp(38px,5vw,78px)] font-semibold leading-[0.98] tracking-tight text-white">
-                Refinamento visual para projetos,
-                <span className="block bg-gradient-to-r from-violet-200 via-white to-cyan-200 bg-clip-text text-transparent"> simulação e documentação técnica.</span>
+              <h1 className="font-display max-w-2xl text-[clamp(32px,4vw,52px)] font-semibold leading-[1.08] tracking-tight text-white">
+                O cockpit visual para <span className="bg-gradient-to-r from-violet-200 via-white to-cyan-200 bg-clip-text text-transparent">projetar, simular e documentar</span> sistemas industriais.
               </h1>
               <p className="mt-5 max-w-2xl text-[15px] leading-8 text-[var(--text-soft)] sm:text-base">
-                O Techsim reúne editor visual, cálculo em tempo real, presets por disciplina e uma experiência de produto mais próxima de software industrial premium do que de um canvas genérico.
+                Monte diagramas elétricos, pneumáticos, hidráulicos e de automação com presets prontos por disciplina, calcule o circuito em tempo real e exporte a documentação — tudo sem sair de um único editor.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <button type="button" onClick={onRegister} className="ts-btn ts-btn-primary rounded-full px-7 py-3 text-[11px]">COMEÇAR AGORA</button>
@@ -82,7 +81,7 @@ export function LandingPage({ onLogin, onRegister }) {
               </div>
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
                 <MetricCard icon="module" label="Módulos especializados" value={String(modules.length)} hint="Elétrica, automação, lógica, instalações, pneumática e mais." color={BRAND} compact />
-                <MetricCard icon="overview" label="Fluxos de visualização" value="2D / 3D" hint="Inspeção técnica, leitura operacional e navegação mais rápida." color={CYAN} compact />
+                <MetricCard icon="overview" label="Fluxos de visualização" value="2D / 3D" hint="Alterne entre esquema técnico 2D e vista espacial 3D do painel." color={CYAN} compact />
                 <MetricCard icon="save" label="Saídas de projeto" value="PNG · SVG · JSON" hint="Documente, salve e retome o trabalho em qualquer etapa." color="#4ade80" compact />
               </div>
             </div>
@@ -129,7 +128,7 @@ export function LandingPage({ onLogin, onRegister }) {
               <div>
                 <div className="eyebrow">Disciplinas</div>
                 <h2 className="font-display mt-2 text-2xl font-semibold text-white">Cobertura completa do stack de engenharia</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">Cada módulo já entra com sinal visual próprio, biblioteca dedicada e caminho curto para começar um projeto ou preset.</p>
+                <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--text-soft)]">Cada módulo já entra com paleta de componentes própria, presets prontos e wiki de referência — abre e começa a montar em segundos.</p>
               </div>
               <button type="button" onClick={onRegister} className="ts-btn ts-btn-ghost rounded-full px-5 py-2 text-[10px]">ABRIR DASHBOARD</button>
             </div>

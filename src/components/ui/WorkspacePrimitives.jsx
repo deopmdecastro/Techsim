@@ -74,13 +74,13 @@ export function EmptyState({ icon = 'info', title, description, action }) {
 
 export function ModuleBadge({ color, icon, label, meta }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3.5 py-3 transition-colors duration-200 hover:border-white/14">
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border" style={{ color, borderColor: `color-mix(in srgb, ${color} 36%, transparent)`, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
+    <div className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3.5 py-3 transition-colors duration-200 hover:border-white/14">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border" style={{ color, borderColor: `color-mix(in srgb, ${color} 36%, transparent)`, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <AppIcon icon={icon} className="h-5 w-5" />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-[var(--text)]">{label}</div>
-        {meta ? <div className="truncate text-xs text-[var(--text-dim)]">{meta}</div> : null}
+        {meta ? <div className="mt-0.5 line-clamp-2 text-xs leading-5 text-[var(--text-dim)]">{meta}</div> : null}
       </div>
     </div>
   );
