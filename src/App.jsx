@@ -7,6 +7,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { IconRail } from './components/IconRail';
 import { AppIcon } from './components/ui/AppIcon';
 import { PageLayout, ThemeSwitch, UserChip } from './components/PageLayout';
+import { CustomSelect } from './components/ui/CustomSelect';
 import { HomePage } from './components/HomePage';
 import { DataPage } from './components/DataPage';
 import { ModelsPage } from './components/ModelsPage';
@@ -36,25 +37,26 @@ function WorkspaceHeader({ activeModule, openBlankModule, moduleOptions, theme, 
 
       <div className="min-w-[260px] flex-1 max-w-xl">
         <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500">Projeto atual</div>
-        <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3">
-          <AppIcon icon={moduleMeta?.iconify} className="h-5 w-5 text-violet-300" />
-          <select
+        <div className="flex items-center gap-3">
+          <CustomSelect
+            className="flex-1"
             value={activeModule}
-            onChange={event => openBlankModule(event.target.value)}
-            className="w-full bg-transparent text-sm font-medium text-slate-100 outline-none"
-          >
-            {moduleOptions.map(module => (
-              <option key={module.id} value={module.id} className="bg-slate-900 text-slate-100">
-                {module.label} — Simulação em tempo real
-              </option>
-            ))}
-          </select>
+            onChange={openBlankModule}
+            options={moduleOptions.map(module => ({ value: module.id, label: `${module.label} — Simulação em tempo real`, icon: module.iconify, color: module.color }))}
+            renderOption={option => (
+              <span className="flex min-w-0 flex-1 items-center gap-2.5">
+                <AppIcon icon={option.icon} className="h-4 w-4 shrink-0" style={{ color: option.color }} />
+                <span className="truncate">{option.label}</span>
+              </span>
+            )}
+            buttonClassName="py-3"
+          />
           {moduleMeta?.wiki && (
             <a
               href={moduleMeta.wiki}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-violet-400/30 hover:text-violet-200"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-white/8 bg-white/5 px-3 py-3 text-xs font-medium text-slate-300 transition hover:border-violet-400/30 hover:text-violet-200"
               title="Abrir referência na Wikipedia"
             >
               <AppIcon name="wiki" className="h-4 w-4" />

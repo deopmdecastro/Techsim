@@ -3,6 +3,7 @@ import { hexToRgba } from '../constants';
 import { MODS_ALL } from '../data/modules';
 import { AppIcon } from './ui/AppIcon';
 import { EmptyState, FilterChip, SectionHero } from './ui/WorkspacePrimitives';
+import { CustomSelect } from './ui/CustomSelect';
 
 const moduleMeta = id => MODS_ALL.find(m => m.id === id);
 
@@ -30,10 +31,18 @@ export function DataPage({ recentProjects, onOpenModule }) {
             <AppIcon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-dim)]" />
             <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Procurar por nome ou resumo..." className="techsim-input py-3 pl-10 pr-4 text-sm" />
           </div>
-          <select value={moduleFilter} onChange={e => setModuleFilter(e.target.value)} className="techsim-input max-w-[240px] py-3 text-sm">
-            <option value="all">Todos os módulos</option>
-            {MODS_ALL.map(module => <option key={module.id} value={module.id}>{module.label}</option>)}
-          </select>
+          <CustomSelect
+            className="lg:max-w-[240px]"
+            value={moduleFilter}
+            onChange={setModuleFilter}
+            options={[{ value: 'all', label: 'Todos os módulos' }, ...MODS_ALL.map(module => ({ value: module.id, label: module.label, icon: module.iconify, color: module.color }))]}
+            renderOption={option => (
+              <span className="flex min-w-0 flex-1 items-center gap-2">
+                {option.icon && <AppIcon icon={option.icon} className="h-4 w-4 shrink-0" style={{ color: option.color }} />}
+                <span className="truncate">{option.label}</span>
+              </span>
+            )}
+          />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <FilterChip active={moduleFilter === 'all'} onClick={() => setModuleFilter('all')}>Todos</FilterChip>
