@@ -282,11 +282,11 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
                 {TABS.map(tab => <FilterChip key={tab.id} active={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>{tab.label}</FilterChip>)}
               </div>
 
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(268px, 1fr))' }}>
                 {SHORTCUTS.map(([key, desc]) => (
                   <div key={key} className="ts-card flex items-center gap-3 rounded-[22px] px-4 py-4">
                     <kbd className="mono shrink-0 rounded-xl border border-violet-400/22 bg-violet-500/10 px-2.5 py-1.5 text-[11px] text-violet-200">{key}</kbd>
-                    <span className="text-sm leading-6 text-[var(--text-soft)]">{desc}</span>
+                    <span className="min-w-0 flex-1 text-sm leading-6 text-[var(--text-soft)]">{desc}</span>
                   </div>
                 ))}
               </div>

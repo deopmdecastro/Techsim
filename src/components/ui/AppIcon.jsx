@@ -70,6 +70,15 @@ export const APP_ICONS = {
   overview: 'solar:pie-chart-2-linear',
   chevronRight: 'solar:alt-arrow-right-linear',
   check: 'solar:check-read-linear',
+  mail: 'solar:letter-linear',
+  building: 'solar:buildings-2-linear',
+  target: 'solar:target-linear',
+  shield: 'solar:shield-check-linear',
+  scale: 'solar:scale-linear',
+  users: 'solar:users-group-rounded-linear',
+  chat: 'solar:chat-round-dots-linear',
+  compass: 'solar:compass-linear',
+  bulb: 'solar:lightbulb-linear',
 };
 
 export function AppIcon({ name, icon, className = '', style }) {
