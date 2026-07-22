@@ -57,26 +57,26 @@ export function UserChip({ user, onClick }) {
 
 export function PageLayout({ active, icon = 'module', title, subtitle, onNavigate, theme, toggleTheme, user, onUserClick, children }) {
   return (
-    <div className="techsim-shell flex h-screen overflow-hidden">
+    <div className="techsim-shell flex min-h-screen overflow-hidden pb-[92px] lg:h-screen lg:pb-0">
       <IconRail active={active} onNavigate={onNavigate} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-4">
-        <header className="panel-glass techsim-hero-card relative overflow-hidden rounded-[30px] px-5 py-5 sm:px-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-3 pb-4 pt-3 sm:px-4 sm:pt-4">
+        <header className="panel-glass techsim-hero-card relative overflow-hidden rounded-[26px] px-4 py-4 sm:rounded-[30px] sm:px-5 sm:py-5 sm:px-6">
           <div className="techsim-orb techsim-orb-violet" aria-hidden="true" />
           <div className="relative z-[1] flex flex-wrap items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-[22px] border border-violet-400/25 bg-gradient-to-br from-violet-500/28 to-indigo-500/18 text-white shadow-[0_0_32px_rgba(124,58,237,0.16)]">
-                <AppIcon name={icon} className="h-7 w-7" />
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] border border-violet-400/25 bg-gradient-to-br from-violet-500/28 to-indigo-500/18 text-white shadow-[0_0_32px_rgba(124,58,237,0.16)] sm:h-14 sm:w-14 sm:rounded-[22px]">
+                <AppIcon name={icon} className="h-6 w-6 sm:h-7 sm:w-7" />
               </div>
               <div className="min-w-0">
                 <div className="eyebrow">Techsim Platform</div>
-                <div className="font-display truncate text-xl font-semibold text-[var(--text)]">{title}</div>
+                <div className="font-display truncate text-lg font-semibold text-[var(--text)] sm:text-xl">{title}</div>
                 {subtitle && <div className="mt-1 text-sm text-[var(--text-soft)]">{subtitle}</div>}
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end sm:gap-3">
               <span className="techsim-kicker">{isRemoteBackendEnabled() ? 'API remota' : 'Modo local'}</span>
-              <span className="techsim-kicker">{backendConfig.appName}</span>
+              <span className="techsim-kicker hidden md:inline-flex">{backendConfig.appName}</span>
               <ThemeSwitch theme={theme} toggleTheme={toggleTheme} />
               <UserChip user={user} onClick={onUserClick} />
             </div>

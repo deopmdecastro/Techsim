@@ -210,10 +210,10 @@ export default function App() {
 
   if (page === 'dashboard') {
     return (
-      <div className="techsim-shell flex h-screen overflow-hidden">
+      <div className="techsim-shell flex min-h-screen overflow-hidden pb-[92px] lg:h-screen lg:pb-0">
         <IconRail active="projects" onNavigate={handleRailNavigate} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="panel-glass mx-4 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[24px] px-5 py-4">
+          <header className="panel-glass mx-3 mt-3 flex flex-wrap items-center justify-between gap-4 rounded-[24px] px-4 py-4 sm:mx-4 sm:mt-4 sm:px-5">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-500/30 to-indigo-500/20 text-white shadow-[0_0_30px_rgba(124,58,237,0.22)]">
                 <AppIcon name="module" className="h-6 w-6" />
@@ -232,7 +232,7 @@ export default function App() {
               <UserChip user={user} />
             </div>
           </header>
-          <div className="min-h-0 flex-1 overflow-auto px-4 pb-4 pt-4">
+          <div className="min-h-0 flex-1 overflow-auto px-3 pb-4 pt-4 sm:px-4">
             <Dashboard
               user={user}
               onLogout={handleLogout}
@@ -299,7 +299,7 @@ export default function App() {
   return (
     <div className="techsim-shell flex h-screen overflow-hidden">
       <IconRail active="edit" onNavigate={handleRailNavigate} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pb-4">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-3 pb-4 sm:px-0">
         <WorkspaceHeader
           activeModule={activeModule}
           openBlankModule={openBlankModule}
@@ -309,7 +309,7 @@ export default function App() {
           user={user}
           onBack={() => setPage('dashboard')}
         />
-        <div className="min-h-0 flex-1 overflow-hidden px-4 pt-4">
+        <div className="min-h-0 flex-1 overflow-hidden px-0 pt-3 sm:px-4 sm:pt-4">
           <Engine
             key={`${activeModule}-${editorSeed}`}
             modId={activeModule}
