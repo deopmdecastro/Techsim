@@ -42,11 +42,14 @@ function WorkspaceHeader({ activeModule, openBlankModule, moduleOptions, theme, 
             className="flex-1"
             value={activeModule}
             onChange={openBlankModule}
-            options={moduleOptions.map(module => ({ value: module.id, label: `${module.label} — Simulação em tempo real`, icon: module.iconify, color: module.color }))}
+            options={moduleOptions.map(module => ({ value: module.id, label: `${module.label} — Simulação em tempo real`, name: module.label, icon: module.iconify, color: module.color }))}
             renderOption={option => (
               <span className="flex min-w-0 flex-1 items-center gap-2.5">
                 <AppIcon icon={option.icon} className="h-4 w-4 shrink-0" style={{ color: option.color }} />
-                <span className="truncate">{option.label}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{option.name}</span>
+                  <span className="block truncate text-xs text-slate-500">Simulação em tempo real</span>
+                </span>
               </span>
             )}
             buttonClassName="py-3"

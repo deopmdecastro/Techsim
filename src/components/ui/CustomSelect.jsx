@@ -73,31 +73,37 @@ export function CustomSelect({
       </button>
 
       {open && (
-        <div
-          ref={listRef}
-          role="listbox"
-          className="panel-glass editor-scroll absolute left-0 right-0 top-[calc(100%+8px)] z-[200] max-h-72 overflow-y-auto rounded-2xl p-1.5 shadow-[0_20px_44px_rgba(2,6,23,0.5)]"
-        >
-          {options.map((option, index) => {
-            const isSelected = option.value === value;
-            const isHighlighted = index === highlight;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                data-highlighted={isHighlighted}
-                onMouseEnter={() => setHighlight(index)}
-                onClick={() => { onChange(option.value); setOpen(false); }}
-                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${isSelected ? 'bg-violet-500/18 text-violet-100' : isHighlighted ? 'bg-white/[0.06] text-white' : 'text-slate-300'}`}
-              >
-                {renderOption ? renderOption(option) : <span className="min-w-0 flex-1 truncate">{option.label}</span>}
-                {isSelected && <AppIcon name="check" className="h-3.5 w-3.5 shrink-0 text-violet-300" />}
-              </button>
-            );
-          })}
-        </div>
+        <>
+          {/* Scrim: deixa claro que o painel é uma camada temporária por cima do
+              resto da UI (evita a sensação de "vidro flutuando" sobre a toolbar
+              do editor) e funciona como área extra de clique-fora-para-fechar. */}
+          <div className="fixed inset-0 z-[190] bg-slate-950/35 backdrop-blur-[1px]" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div
+            ref={listRef}
+            role="listbox"
+            className="animate-select-pop editor-scroll absolute left-0 right-0 top-[calc(100%+8px)] z-[200] max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-[#0b0f1a] p-1.5 shadow-[0_24px_52px_rgba(2,6,23,0.6)]"
+          >
+            {options.map((option, index) => {
+              const isSelected = option.value === value;
+              const isHighlighted = index === highlight;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  data-highlighted={isHighlighted}
+                  onMouseEnter={() => setHighlight(index)}
+                  onClick={() => { onChange(option.value); setOpen(false); }}
+                  className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${isSelected ? 'bg-violet-500/18 text-violet-100' : isHighlighted ? 'bg-white/[0.06] text-white' : 'text-slate-300'}`}
+                >
+                  {renderOption ? renderOption(option) : <span className="min-w-0 flex-1 truncate">{option.label}</span>}
+                  {isSelected && <AppIcon name="check" className="h-3.5 w-3.5 shrink-0 text-violet-300" />}
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
