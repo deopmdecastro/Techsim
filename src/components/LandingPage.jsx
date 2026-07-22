@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { MODS_ALL } from '../data/modules';
 import { AppIcon } from './ui/AppIcon';
 import { MetricCard, ModuleBadge } from './ui/WorkspacePrimitives';
+import { Footer } from './Footer';
 
 const BRAND = '#8b5cf6';
 const CYAN = '#22d3ee';
@@ -18,7 +19,7 @@ const HIGHLIGHTS = [
   { icon: 'reports', title: 'Pronto para produção', copy: 'Modo claro/escuro, biblioteca de símbolos industrial e backend próprio, prontos desde o primeiro projeto.' },
 ];
 
-export function LandingPage({ onLogin, onRegister }) {
+export function LandingPage({ onLogin, onRegister, onNavigate }) {
   const [hovered, setHovered] = useState(null);
 
   const modules = useMemo(() => MODS_ALL.map(module => ({
@@ -60,7 +61,7 @@ export function LandingPage({ onLogin, onRegister }) {
       </nav>
 
       <main className="relative z-[1] mx-auto flex max-w-[1320px] flex-col gap-6 px-5 py-6 sm:px-8 lg:px-12 lg:py-8">
-        <section className="panel-glass techsim-hero-card relative overflow-hidden rounded-[34px] px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
+        <section id="workflow" className="panel-glass techsim-hero-card relative scroll-mt-24 overflow-hidden rounded-[34px] px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
           <div className="techsim-orb techsim-orb-violet" aria-hidden="true" />
           <div className="techsim-orb techsim-orb-cyan" aria-hidden="true" />
           <div className="relative z-[1] grid gap-8 xl:grid-cols-[minmax(0,1.15fr)_500px] xl:items-center">
@@ -122,7 +123,7 @@ export function LandingPage({ onLogin, onRegister }) {
           </div>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <section id="modules" className="grid scroll-mt-24 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="panel-glass rounded-[30px] p-6 sm:p-7">
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
@@ -184,6 +185,8 @@ export function LandingPage({ onLogin, onRegister }) {
           </div>
         </section>
       </main>
+
+      <Footer onNavigate={onNavigate} onLogin={onLogin} onRegister={onRegister} />
     </div>
   );
 }

@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LandingPage } from './components/LandingPage';
+import { AboutPage } from './components/pages/AboutPage';
+import { DocsPage } from './components/pages/DocsPage';
+import { ContactPage } from './components/pages/ContactPage';
+import { TermsPage } from './components/pages/TermsPage';
+import { PrivacyPage } from './components/pages/PrivacyPage';
 import { AuthModal } from './components/AuthModal';
 import { Dashboard } from './components/Dashboard';
 import { Engine } from './components/Engine';
@@ -200,12 +205,33 @@ export default function App() {
     if (['home', 'data', 'models', 'reports', 'media', 'settings'].includes(id)) setPage(id);
   }, []);
 
+  const handleInfoNavigate = useCallback((targetPage, hash) => {
+    setPage(targetPage);
+    if (hash) {
+      requestAnimationFrame(() => {
+        setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      });
+    } else {
+      window.scrollTo({ top: 0 });
+    }
+  }, []);
+
   if (page === 'landing') {
     return (
       <div className="techsim-shell">
-        <LandingPage onLogin={() => setAuth({ mode: 'login' })} onRegister={() => setAuth({ mode: 'register' })} />
+        <LandingPage onLogin={() => setAuth({ mode: 'login' })} onRegister={() => setAuth({ mode: 'register' })} onNavigate={handleInfoNavigate} />
         {auth && <AuthModal mode={auth.mode} onClose={() => setAuth(null)} onSubmit={handleAuthSubmit} />}
       </div>
+    );
+  }
+
+  if (['about', 'docs', 'contact', 'terms', 'privacy'].includes(page)) {
+    const InfoPage = { about: AboutPage, docs: DocsPage, contact: ContactPage, terms: TermsPage, privacy: PrivacyPage }[page];
+    return (
+      <>
+        <InfoPage onNavigate={handleInfoNavigate} onLogin={() => setAuth({ mode: 'login' })} onRegister={() => setAuth({ mode: 'register' })} />
+        {auth && <AuthModal mode={auth.mode} onClose={() => setAuth(null)} onSubmit={handleAuthSubmit} />}
+      </>
     );
   }
 

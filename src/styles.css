@@ -262,15 +262,17 @@ button { cursor: pointer; }
 }
 .ts-btn-primary:hover { box-shadow: 0 18px 44px rgba(139, 92, 246, 0.44); transform: translateY(-1px); filter: brightness(1.05); }
 
-.techsim-input {
-  width: 100%;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  padding: 12px 16px;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
+@layer components {
+  .techsim-input {
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 78%, transparent);
+    padding: 12px 16px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
+  }
 }
 .techsim-input::placeholder { color: var(--text-dim); }
 .techsim-input:hover { border-color: color-mix(in srgb, var(--accent) 22%, var(--border)); }
