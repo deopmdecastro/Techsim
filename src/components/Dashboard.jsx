@@ -118,9 +118,9 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="panel-glass editor-scroll flex min-h-0 flex-col gap-3 overflow-y-auto rounded-[24px] p-3.5">
-          <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-3.5">
+          <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-4">
             <div className="pointer-events-none absolute -right-6 -top-10 h-24 w-24 rounded-full bg-violet-500/12 blur-2xl" />
-            <div className="eyebrow mb-1.5">Navegação</div>
+            <div className="eyebrow mb-2">Navegação</div>
             <div className="font-display text-[15px] font-semibold text-[var(--text)]">Cockpit do Techsim</div>
             <div className="mt-1.5 text-xs leading-6 text-[var(--text-soft)]">Troque entre módulos, projetos recentes e atalhos sem perder contexto do workspace.</div>
           </div>
