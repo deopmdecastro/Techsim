@@ -145,8 +145,11 @@ export function Dashboard({ user, onLogout, onOpenModule, onOpenPreset, onAdmin,
             })}
           </nav>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            {stats.map(item => <MetricCard key={item.label} icon={item.icon} label={item.label} value={item.value} hint={item.hint} color={item.color} compact />)}
+          <div>
+            <div className="eyebrow mb-2.5">Resumo</div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {stats.map(item => <MetricCard key={item.label} icon={item.icon} label={item.label} value={item.value} hint={item.hint} color={item.color} compact />)}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3.5">
