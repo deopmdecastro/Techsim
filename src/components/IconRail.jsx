@@ -123,7 +123,7 @@ export function IconRail({ active = 'edit', onNavigate }) {
             <div className="mt-1.5 text-sm font-semibold text-white">{activeItem?.label || 'Editor'}</div>
           </div>
 
-          <div className="editor-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+          <div className="editor-scroll mt-4 flex min-h-0 flex-1 flex-col justify-center gap-2 overflow-y-auto pr-1">
             {RAIL_ITEMS.map(item => {
               const isActive = item.id === active;
               return (
@@ -145,7 +145,7 @@ export function IconRail({ active = 'edit', onNavigate }) {
             })}
           </div>
 
-          <div className="mt-auto flex flex-col gap-2">
+          <div className="mt-auto flex flex-col gap-2 border-t border-white/8 pt-3">
             <button type="button" onClick={() => onNavigate?.('settings')} className={railButtonClass(active === 'settings')}>
               <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${active === 'settings' ? 'bg-violet-500/16 text-violet-200' : 'bg-white/[0.03] text-slate-400'}`}>
                 {getRailIcon('settings')}
