@@ -1,5 +1,19 @@
 import { G, hexToRgba, shiftHex } from '../constants';
 import { LIBS } from '../data/modules';
+import { getTintedSymbol } from './symbolImages';
+
+// Tipos de componente "estáticos" (sem estado dependente de valor ao vivo,
+// como agulha de medidor, posição de válvula, etc.) para os quais existe um
+// símbolo SVG real na biblioteca — para estes, o canvas passa a desenhar o
+// mesmo desenho técnico usado na galeria "Mídia" e na doca de componentes,
+// em vez da forma vetorial aproximada. Componentes com animação/estado ao
+// vivo (medidores, válvulas, PLC, osciloscópio, servo, etc.) continuam a
+// usar o desenho vetorial dedicado, que sabe representar esse estado.
+const SVG_BACKED_TYPES = new Set([
+  'res', 'cap', 'ind', 'diode', 'led', 'gnd', 'gnde',
+  'and', 'or', 'not', 'nand', 'nor', 'xor', 'buf',
+  'vdc', 'vac', 'idc', 'fus', 'fuse', 'transformer', 'lamp',
+]);
 
 export function drawGrid(ctx,W,H,pan,zoom){
   const s=G*zoom,ox=((pan.x%s)+s)%s,oy=((pan.y%s)+s)%s;
@@ -942,7 +956,15 @@ export function drawComp(ctx,comp,sel,live,modColor,viewMode="2d"){
   const gateType=["and","or","not","nand","nor","xor","buf"].includes(t);
   const contactType=["cno","cnf","cpos","coil","set","rst"].includes(t);
   if(hasLeads&&!gateType&&!contactType&&!["vd","valivio","vret","v32","v52","v53","cont","rele","mote","disj","qg","qc","fus","rterm","dr","transf","snsr","fq","inp","out","ffsr","ton","tof","ctu","cmp"].includes(t)){ctx.strokeStyle=sel?"#fbbf24":col;ctx.lineWidth=2;ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(-G,0);ctx.lineTo(-22,0);ctx.stroke();ctx.beginPath();ctx.moveTo(22,0);ctx.lineTo(G,0);ctx.stroke();}
-  switch(t){
+  let usedSvgSymbol = false;
+  if (SVG_BACKED_TYPES.has(t)) {
+    const tinted = getTintedSymbol(t, sel ? "#fbbf24" : col, 34);
+    if (tinted) {
+      ctx.drawImage(tinted, -tinted.width / 2, -tinted.height / 2, tinted.width, tinted.height);
+      usedSvgSymbol = true;
+    }
+  }
+  if (!usedSvgSymbol) switch(t){
     case"res":shRes(ctx,col,sel);break;case"cap":shCap(ctx,col,sel);break;case"ind":shInd(ctx,col,sel);break;
     case"vdc":shVsrc(ctx,col,sel,false);break;case"vac":shVsrc(ctx,col,sel,true);break;case"idc":shIsrc(ctx,col,sel);break;
     case"gnd":case"gnde":shGnd(ctx,col,sel);break;case"diode":shDiode(ctx,col,sel,false);break;case"led":shDiode(ctx,col,sel,true);break;
